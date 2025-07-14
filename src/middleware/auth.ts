@@ -40,8 +40,7 @@ export const authenticateToken = async (
       return;
     }
 
-    const user = await User.findById(decoded.userId);
-    if (!user) {
+      const user = await User.findById(decoded.sub);    if (!user) {
       res.status(401).json({ error: 'Usuário não encontrado' });
       return;
     }

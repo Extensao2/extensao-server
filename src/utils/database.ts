@@ -15,16 +15,32 @@ export class Database {
 
   async connect(): Promise<void> {
     if (this.isConnected) {
-      console.log('Already connected to MongoDB');
+      console.log('MongoDB já está conectado.');
       return;
     }
 
     try {
-      const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/sistema-aprendizagem';
-      
-      console.log('Attempting to connect to MongoDB...');
-      console.log('MongoDB URI:', mongoUri);
-      
+      // --- INÍCIO DA CORREÇÃO ---
+      // Lê as variáveis de ambiente separadamente.
+      const { MONGO_USER, MONGO_PASS, MONGO_HOST, MONGO_PORT, MONGO_DB_NAME } = process.env;
+
+      let mongoUri: string;
+
+      // Verifica se todas as variáveis necessárias para a conexão autenticada existem.
+      if (MONGO_USER && MONGO_PASS && MONGO_HOST && MONGO_PORT && MONGO_DB_NAME) {
+        // Monta a URI dinamicamente. É aqui que a "mágica" acontece.
+        mongoUri = `mongodb://${MONGO_USER}:${MONGO_PASS}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_DB_NAME}?authSource=admin`;
+      } else {
+        // Se as variáveis não estiverem definidas, usa uma conexão local padrão sem autenticação.
+        console.warn('⚠️ Variáveis de ambiente do MongoDB não definidas. Usando URI padrão não autenticada.');
+        mongoUri = 'mongodb://localhost:27017/sistema-aprendizagem';
+      }
+      // --- FIM DA CORREÇÃO ---
+
+      console.log('Tentando conectar ao MongoDB...');
+      // Log da URI com a senha ofuscada para segurança.
+      console.log('MongoDB URI:', mongoUri.replace(/:.*@/, ':<password>@'));
+
       await mongoose.connect(mongoUri, {
         maxPoolSize: 10,
         serverSelectionTimeoutMS: 5000,
@@ -33,27 +49,22 @@ export class Database {
       });
 
       this.isConnected = true;
-      console.log('✅ Connected to MongoDB successfully');
+      console.log('✅ Conectado ao MongoDB com sucesso!');
 
       mongoose.connection.on('error', (error) => {
-        console.error('MongoDB connection error:', error);
+        console.error('❌ Erro na conexão com o MongoDB:', error);
         this.isConnected = false;
       });
 
       mongoose.connection.on('disconnected', () => {
-        console.log('MongoDB disconnected');
+        console.log('🔌 Desconectado do MongoDB.');
         this.isConnected = false;
       });
 
     } catch (error) {
-      console.error('❌ Failed to connect to MongoDB:', error);
-      console.log('💡 Make sure MongoDB is running on your system');
-      console.log('💡 You can start MongoDB with: mongod');
-      console.log('💡 Or use a cloud MongoDB service like MongoDB Atlas');
-      
-      // Don't throw the error, just log it and continue
-      // This allows the server to start even without MongoDB
+      console.error('❌ Falha ao conectar ao MongoDB:', error);
       this.isConnected = false;
+      // Permite que o servidor continue rodando mesmo sem a conexão com o banco.
     }
   }
 
@@ -65,9 +76,9 @@ export class Database {
     try {
       await mongoose.disconnect();
       this.isConnected = false;
-      console.log('Disconnected from MongoDB');
+      console.log('Desconectado do MongoDB.');
     } catch (error) {
-      console.error('Error disconnecting from MongoDB:', error);
+      console.error('Erro ao desconectar do MongoDB:', error);
     }
   }
 

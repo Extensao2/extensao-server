@@ -1,350 +1,268 @@
 {
-  "info": {
-    "name": "Sistema de Aprendizagem API",
-    "description": "Coleção completa para testar a API do Sistema de Aprendizagem",
-    "version": "1.0.0",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{authToken}}",
-        "type": "string"
-      }
-    ]
-  },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:3000/api/v1",
-      "type": "string"
-    },
-    {
-      "key": "authToken",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "resourceId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "userId",
-      "value": "",
-      "type": "string"
-    }
-  ],
-  "item": [
-    {
-      "name": "Health Check",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:3000/health",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["health"]
-        },
-        "description": "Verifica se o servidor está funcionando"
-      },
-      "response": []
-    },
-    {
-      "name": "Authentication",
-      "item": [
-        {
-          "name": "Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('authToken', response.token);",
-                  "    pm.collectionVariables.set('userId', response.userId);",
-                  "    console.log('Token salvo:', response.token);",
-                  "    console.log('User ID salvo:', response.userId);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWlkLTEyMyIsImVtYWlsIjoidGVzdGVAdGVzdGUuY29tIiwibmFtZSI6IlVzdcOhcmlvIFRlc3RlIiwiaXNzIjoiaHR0cHM6Ly9vYXV0aC1wcm92aWRlci5jb20iLCJhdWQiOiJhcGktYXVkaWVuY2UiLCJleHAiOjk5OTk5OTk5OTksImlhdCI6MTYwMDAwMDAwMH0.example-signature\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["login"]
-            },
-            "description": "Autentica usuário com token OAuth"
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Resources - Admin",
-      "item": [
-        {
-          "name": "Criar Recurso",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('resourceId', response.id);",
-                  "    console.log('Resource ID salvo:', response.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Introdução ao JavaScript\",\n  \"content\": \"Q29udGXDumRvIGRvIGN1cnNvIGRlIEphdmFTY3JpcHQgZW0gYmFzZTY0\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/resource",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "resource"]
-            },
-            "description": "Cria um novo recurso (apenas admin)"
-          },
-          "response": []
-        },
-        {
-          "name": "Atualizar Recurso",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"JavaScript Avançado - Atualizado\",\n  \"content\": \"Q29udGXDumRvIGF0dWFsaXphZG8gZG8gY3Vyc28gZGUgSmF2YVNjcmlwdA==\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/resource/{{resourceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "resource", "{{resourceId}}"]
-            },
-            "description": "Atualiza um recurso existente (apenas admin)"
-          },
-          "response": []
-        },
-        {
-          "name": "Deletar Recurso",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/admin/resource/{{resourceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "resource", "{{resourceId}}"]
-            },
-            "description": "Deleta um recurso (apenas admin)"
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Resources - User",
-      "item": [
-        {
-          "name": "Buscar Recursos",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/resources/search?page=0&size=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["resources", "search"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "0"
-                },
-                {
-                  "key": "size",
-                  "value": "10"
-                },
-                {
-                  "key": "title",
-                  "value": "JavaScript",
-                  "disabled": true
-                }
-              ]
-            },
-            "description": "Busca recursos com paginação e filtro opcional por título"
-          },
-          "response": []
-        },
-        {
-          "name": "Obter Recurso por ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/resource/{{resourceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["resource", "{{resourceId}}"]
-            },
-            "description": "Obtém um recurso específico por ID"
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Events",
-      "item": [
-        {
-          "name": "Listar Todos os Eventos",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/events",
-              "host": ["{{baseUrl}}"],
-              "path": ["events"]
-            },
-            "description": "Lista todos os eventos disponíveis"
-          },
-          "response": []
-        },
-        {
-          "name": "Eventos por Usuário (Admin)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/admin/events/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "events", "{{userId}}"]
-            },
-            "description": "Obtém eventos de um usuário específico (apenas admin)"
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Test Cases",
-      "item": [
-        {
-          "name": "Teste - Token Inválido",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "token-invalido",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/events",
-              "host": ["{{baseUrl}}"],
-              "path": ["events"]
-            },
-            "description": "Testa resposta com token inválido (deve retornar 401)"
-          },
-          "response": []
-        },
-        {
-          "name": "Teste - Sem Token",
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/resources/search",
-              "host": ["{{baseUrl}}"],
-              "path": ["resources", "search"]
-            },
-            "description": "Testa acesso sem token (deve retornar 401)"
-          },
-          "response": []
-        },
-        {
-          "name": "Teste - Recurso Inexistente",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/resource/00000000-0000-0000-0000-000000000000",
-              "host": ["{{baseUrl}}"],
-              "path": ["resource", "00000000-0000-0000-0000-000000000000"]
-            },
-            "description": "Testa busca por recurso inexistente (deve retornar 404)"
-          },
-          "response": []
-        },
-        {
-          "name": "Teste - Dados Inválidos",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"\",\n  \"content\": \"\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/admin/resource",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "resource"]
-            },
-            "description": "Testa criação com dados inválidos (deve retornar 400)"
-          },
-          "response": []
-        }
-      ]
-    }
-  ]
+	"info": {
+		"name": "Sistema de Aprendizagem API",
+		"description": "Coleção completa para testar a API do Sistema de Aprendizagem",
+		"version": "1.0.0",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"health"
+					]
+				},
+				"description": "Verifica se o servidor está funcionando"
+			},
+			"response": []
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('authToken', response.token);",
+									"    pm.collectionVariables.set('userId', response.userId);",
+									"    console.log('Token salvo:', response.token);",
+									"    console.log('User ID salvo:', response.userId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2Zha2Utb2F1dGgtcHJvdmlkZXIuY29tIiwic3ViIjoidXNlci1pZC0xMjM0NTY3ODkiLCJhdWQiOiJhcGktYXVkaWVuY2UiLCJuYW1lIjoiVXN1w6FyaW8gZGUgVGVzdGUiLCJlbWFpbCI6InRlc3RlQG1pbmhhYXBpLmNvbSIsImlhdCI6MTYwOTQ1OTIwMCwiZXhwIjo5OTk5OTk5OTk5fQ.signature-goes-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "Autentica usuário com token OAuth e salva o token da API"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Resources - Admin",
+			"item": [
+				{
+					"name": "Criar Recurso",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('resourceId', response.id);",
+									"    console.log('Resource ID salvo:', response.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Introdução ao JavaScript\",\n  \"content\": \"Q29udGXDumRvIGRvIGN1cnNvIGRlIEphdmFTY3JpcHQgZW0gYmFzZTY0\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/resource",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"resource"
+							]
+						},
+						"description": "Cria um novo recurso (apenas admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Recurso",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"JavaScript Avançado - Atualizado\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/resource/{{resourceId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"resource",
+								"{{resourceId}}"
+							]
+						},
+						"description": "Atualiza um recurso existente (apenas admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Recurso",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/resource/{{resourceId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"admin",
+								"resource",
+								"{{resourceId}}"
+							]
+						},
+						"description": "Deleta um recurso (apenas admin)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Resources - User",
+			"item": [
+				{
+					"name": "Buscar Recursos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/resources/search?page=0&size=10&title=JavaScript",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"resources",
+								"search"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "title",
+									"value": "JavaScript"
+								}
+							]
+						},
+						"description": "Busca recursos com paginação e filtro opcional por título"
+					},
+					"response": []
+				},
+				{
+					"name": "Obter Recurso por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/resource/{{resourceId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"resource",
+								"{{resourceId}}"
+							]
+						},
+						"description": "Obtém um recurso específico por ID"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "resourceId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		}
+	]
 }
