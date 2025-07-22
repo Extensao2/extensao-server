@@ -78,11 +78,11 @@ docker-compose up -d
 - `GET /api/v1/resources/search?title=texto` - Buscar recursos
 
 ### Eventos
-- `GET /api/v1/eventos` - Listar todos os eventos
-- `POST /api/v1/eventos` - Criar evento
-- `GET /api/v1/eventos/:id` - Obter evento por ID
-- `PUT /api/v1/eventos/:id` - Atualizar evento
-- `DELETE /api/v1/eventos/:id` - Deletar evento
+- `GET /api/v1/events` - Listar todos os eventos
+- `POST /api/v1/events` - Criar evento
+- `GET /api/v1/events/:id` - Obter evento por ID
+- `PUT /api/v1/events/:id` - Atualizar evento
+- `DELETE /api/v1/events/:id` - Deletar evento
 
 ## 🔒 Autenticação
 
@@ -107,7 +107,7 @@ PUT /api/v1/resource
 
 ### Criar um Evento:
 ```json
-POST /api/v1/eventos
+POST /api/v1/events
 {
   "nome": "Workshop de React",
   "data": "2024-02-15T14:30:00Z",
