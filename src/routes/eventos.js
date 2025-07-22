@@ -31,7 +31,12 @@ router.post('/eventos', requireAuth, [
 
     const { nome, data, descricao } = req.body;
 
-    const evento = new Evento({ nome, data, descricao });
+    const evento = new Evento({ 
+      nome, 
+      data, 
+      descricao,
+      createdBy: req.user._id
+    });
     await evento.save();
 
     res.status(201).json(evento.toJSON());

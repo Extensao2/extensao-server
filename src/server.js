@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import dotenv from 'dotenv';
+import passport from './config/passport.js';
 import { connectDB } from './config/database.js';
 import authRoutes from './routes/auth.js';
 import resourceRoutes from './routes/resources.js';
@@ -33,12 +35,20 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   name: 'session_id',
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    touchAfter: 24 * 3600 // lazy session update
+  }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
 app.use('/api/v1', authRoutes);

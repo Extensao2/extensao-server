@@ -1,10 +1,10 @@
 # Sistema de Aprendizagem API
 
-API RESTful para gerenciamento de recursos de aprendizagem e eventos, construída com Express.js e MongoDB.
+API RESTful para gerenciamento de recursos de aprendizagem e eventos, construída com Express.js, MongoDB e autenticação OAuth Google.
 
 ## 🚀 Funcionalidades
 
-- **Autenticação**: Sistema de login com sessões baseadas em cookies
+- **Autenticação OAuth**: Sistema de login com Google OAuth e sessões baseadas em cookies
 - **Recursos**: CRUD completo para recursos de aprendizagem com busca por título
 - **Eventos**: Gerenciamento completo de eventos com data e descrição
 - **Validação**: Validação robusta de dados de entrada
@@ -43,6 +43,16 @@ npm run dev
 npm start
 ```
 
+5. **Configure Google OAuth:**
+   - Acesse o [Google Cloud Console](https://console.cloud.google.com/)
+   - Crie um novo projeto ou selecione um existente
+   - Ative a Google+ API
+   - Crie credenciais OAuth 2.0
+   - Configure as URLs de redirecionamento:
+     - Desenvolvimento: `http://localhost:3000/api/v1/auth/google/callback`
+     - Produção: `https://extensaoads2.sj.ifsc.edu.br/api/v1/auth/google/callback`
+   - Atualize o arquivo `.env` com suas credenciais
+
 ## 🐳 Docker
 
 Para rodar toda a aplicação com Docker:
@@ -54,9 +64,11 @@ docker-compose up -d
 ## 📚 API Endpoints
 
 ### Autenticação
-- `POST /api/v1/login` - Login do usuário
+- `GET /api/v1/auth/google` - Iniciar login com Google OAuth
+- `GET /api/v1/auth/google/callback` - Callback do Google OAuth
+- `GET /api/v1/me` - Obter informações do usuário atual
+- `GET /api/v1/status` - Verificar status de autenticação
 - `POST /api/v1/logout` - Logout do usuário
-- `POST /api/v1/register` - Registro de usuário (para desenvolvimento)
 
 ### Recursos
 - `PUT /api/v1/resource` - Criar recurso
@@ -74,16 +86,13 @@ docker-compose up -d
 
 ## 🔒 Autenticação
 
-A API usa autenticação baseada em sessões com cookies. Após o login bem-sucedido, um cookie `session_id` é definido automaticamente.
+A API usa autenticação OAuth com Google e sessões baseadas em cookies. 
 
-### Exemplo de Login:
-```json
-POST /api/v1/login
-{
-  "username": "usuario",
-  "password": "senha123"
-}
-```
+### Fluxo de Autenticação:
+1. Acesse `GET /api/v1/auth/google` para iniciar o login
+2. O usuário será redirecionado para o Google
+3. Após autorização, será redirecionado de volta com sessão ativa
+4. Um cookie `session_id` será definido automaticamente
 
 ## 📝 Exemplos de Uso
 
@@ -131,6 +140,9 @@ MONGODB_URI=mongodb://localhost:27017/sistema-aprendizagem
 SESSION_SECRET=your-super-secret-session-key
 PORT=3000
 NODE_ENV=development
+GOOGLE_CLIENT_ID=your-google-client-id-here
+GOOGLE_CLIENT_SECRET=your-google-client-secret-here
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
 ```
 
 ## 📦 Dependências Principais
@@ -138,6 +150,8 @@ NODE_ENV=development
 - **Express.js**: Framework web
 - **Mongoose**: ODM para MongoDB
 - **express-session**: Gerenciamento de sessões
+- **connect-mongo**: Store de sessões no MongoDB
+- **Passport.js**: Middleware de autenticação
+- **passport-google-oauth20**: Estratégia OAuth Google
 - **express-validator**: Validação de dados
-- **bcryptjs**: Hash de senhas
 - **uuid**: Geração de IDs únicos

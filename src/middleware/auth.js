@@ -1,6 +1,9 @@
 export const requireAuth = (req, res, next) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Authentication required' });
+  if (!req.user) {
+    return res.status(401).json({
+      error: 'Authentication required',
+      oauth_url: '/api/v1/auth/google'
+    });
   }
   next();
 };

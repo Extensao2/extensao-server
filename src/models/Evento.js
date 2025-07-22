@@ -22,6 +22,11 @@ const eventoSchema = new mongoose.Schema({
     trim: true,
     maxlength: 1000
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
