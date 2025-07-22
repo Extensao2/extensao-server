@@ -1,8 +1,7 @@
-@@ .. @@
- import express from 'express';
- import { body, param, query, validationResult } from 'express-validator';
- import Resource from '../models/Resource.js';
- import { requireAuth } from '../middleware/auth.js';
+import express from 'express';
+import { body, param, query, validationResult } from 'express-validator';
+import Resource from '../models/Resource.js';
+import { requireAuth } from '../middleware/auth.js';
  
  const router = express.Router();
  
@@ -22,7 +21,7 @@
      const resource = new Resource({ 
        title, 
        content,
-+      createdBy: req.user._id
+      createdBy: req.user._id
      });
      await resource.save();
  
