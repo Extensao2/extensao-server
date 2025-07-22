@@ -5,20 +5,20 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all eventos (GET /eventos)
-router.get('/eventos', async (req, res) => {
+// Get all events (GET /events)
+router.get('/events', async (req, res) => {
   try {
-    const eventos = await Evento.find().sort({ data: 1 });
-    const response = eventos.map(evento => evento.toJSON());
+    const events = await Evento.find().sort({ data: 1 });
+    const response = events.map(evento => evento.toJSON());
     res.status(200).json(response);
   } catch (error) {
-    console.error('Get eventos error:', error);
+    console.error('Get events error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Create evento (POST /eventos)
-router.post('/eventos', requireAuth, [
+// Create evento (POST /events)
+router.post('/events', requireAuth, [
   body('nome').notEmpty().withMessage('Nome is required'),
   body('data').isISO8601().withMessage('Data must be a valid datetime'),
   body('descricao').optional().isString().withMessage('Descricao must be a string')
@@ -46,8 +46,8 @@ router.post('/eventos', requireAuth, [
   }
 });
 
-// Get evento by ID (GET /eventos/:id)
-router.get('/eventos/:id', [
+// Get evento by ID (GET /events/:id)
+router.get('/events/:id', [
   param('id').notEmpty().withMessage('Evento ID is required')
 ], async (req, res) => {
   try {
@@ -68,8 +68,8 @@ router.get('/eventos/:id', [
   }
 });
 
-// Update evento (PUT /eventos/:id)
-router.put('/eventos/:id', requireAuth, [
+// Update evento (PUT /events/:id)
+router.put('/events/:id', requireAuth, [
   param('id').notEmpty().withMessage('Evento ID is required'),
   body('nome').notEmpty().withMessage('Nome is required'),
   body('data').isISO8601().withMessage('Data must be a valid datetime'),
@@ -100,8 +100,8 @@ router.put('/eventos/:id', requireAuth, [
   }
 });
 
-// Delete evento (DELETE /eventos/:id)
-router.delete('/eventos/:id', requireAuth, [
+// Delete evento (DELETE /events/:id)
+router.delete('/events/:id', requireAuth, [
   param('id').notEmpty().withMessage('Evento ID is required')
 ], async (req, res) => {
   try {
