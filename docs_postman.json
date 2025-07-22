@@ -1,0 +1,435 @@
+{
+	"info": {
+		"_postman_id": "416ab7e3-057e-42be-8082-42cc4775eec3",
+		"name": "Sistema de Aprendizagem API",
+		"description": "Coleção completa para testar a API do Sistema de Aprendizagem",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45943596",
+		"_collection_link": "https://henrique-3783237.postman.co/workspace/Henrique's-Workspace~7b449a78-52a4-42c3-8904-c7e180ff7ac1/collection/45943596-416ab7e3-057e-42be-8082-42cc4775eec3?action=share&source=collection_link&creator=45943596"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('authToken', response.token);",
+									"    pm.collectionVariables.set('userId', response.userId);",
+									"    console.log('Token salvo:', response.token);",
+									"    console.log('User ID salvo:', response.userId);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"crieiagora\",\n  \"password\": \"crieiagora\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "Autentica usuário com token OAuth e salva o token da API"
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"crieiagora\",\n    \"password\": \"crieiagora\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deslogar",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logar com google",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/login/auth/google",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"login",
+								"auth",
+								"google"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ver quem é você",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ver status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Resources - Admin",
+			"item": [
+				{
+					"name": "Criar Recurso",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('resourceId', response.id);",
+									"    console.log('Resource ID salvo:', response.id);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Introdução ao JavaScript\",\n  \"content\": \"Y29udGXDum RvIGN1cnNvIGVtIGJhc2U2NA==\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/resource",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"resource"
+							]
+						},
+						"description": "Cria um novo recurso (apenas admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Recurso",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"JavaScript Avançado - Atualizado\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/resource/{{resourceId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"resource",
+								"{{resourceId}}"
+							]
+						},
+						"description": "Atualiza um recurso existente (apenas admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Recurso",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/resource/{{resourceId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"resource",
+								"{{resourceId}}"
+							]
+						},
+						"description": "Deleta um recurso (apenas admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar todos os recursos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/resources/search?title=texto",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"resources",
+								"search"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "texto"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obter recurso por id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/resource/{{resourceId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"resource",
+								"{{resourceId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Eventos",
+			"item": [
+				{
+					"name": "Listar todos eventos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Criar um evento",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nome\": \"Workshop de React\",\n  \"data\": \"2024-02-15T14:30:00Z\",\n  \"descricao\": \"Workshop introdutório sobre React.js\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Coletar evento por  ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/148068b5-af7e-4b8e-af8f-5a45a6f24ad6",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"148068b5-af7e-4b8e-af8f-5a45a6f24ad6"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/v1/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"v1",
+						"health"
+					]
+				},
+				"description": "Verifica se o servidor está funcionando"
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "resourceId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
