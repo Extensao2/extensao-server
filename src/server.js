@@ -7,7 +7,7 @@ import passport from './config/passport.js';
 import { connectDB } from './config/database.js';
 import authRoutes from './routes/auth.js';
 import resourceRoutes from './routes/resources.js';
-import eventoRoutes from './routes/eventos.js';
+import eventoRoutes from './routes/events.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
