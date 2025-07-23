@@ -17,10 +17,7 @@ router.get('/auth/google/callback',
   }),
   (req, res) => {
     // Successful authentication
-    res.redirect(process.env.NODE_ENV === 'production' 
-      ? 'https://extensaoads2.sj.ifsc.edu.br/dashboard' 
-      : 'http://localhost:3000/dashboard'
-    );
+    res.redirect('https://extensaoads2.sj.ifsc.edu.br/api/v1/eventos');
   }
 );
 
