@@ -12,87 +12,6 @@
 			"name": "Authentication",
 			"item": [
 				{
-					"name": "Login",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 200) {",
-									"    const response = pm.response.json();",
-									"    pm.collectionVariables.set('authToken', response.token);",
-									"    pm.collectionVariables.set('userId', response.userId);",
-									"    console.log('Token salvo:', response.token);",
-									"    console.log('User ID salvo:', response.userId);",
-									"}"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"username\": \"crieiagora\",\n  \"password\": \"crieiagora\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/login",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"login"
-							]
-						},
-						"description": "Autentica usuário com token OAuth e salva o token da API"
-					},
-					"response": []
-				},
-				{
-					"name": "Register",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"username\": \"crieiagora\",\n    \"password\": \"crieiagora\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/register",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"register"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Deslogar",
 					"request": {
 						"method": "POST",
@@ -112,15 +31,14 @@
 				{
 					"name": "Logar com google",
 					"request": {
-						"method": "POST",
+						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/login/auth/google",
+							"raw": "{{baseUrl}}/auth/google",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
-								"login",
 								"auth",
 								"google"
 							]
@@ -205,7 +123,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"Introdução ao JavaScript\",\n  \"content\": \"Y29udGXDum RvIGN1cnNvIGVtIGJhc2U2NA==\"\n}"
+							"raw": "{\n  \"title\": \"Introdução ao Java\",\n  \"content\": \"Y29udGXDum RvIGN1cnNvIGVtIGJhc2U2NA==\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/resource",
@@ -273,19 +191,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/resources/search?title=texto",
+							"raw": "{{baseUrl}}/resources/search",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"resources",
 								"search"
-							],
-							"query": [
-								{
-									"key": "title",
-									"value": "texto"
-								}
 							]
 						}
 					},
@@ -338,7 +250,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"nome\": \"Workshop de React\",\n  \"data\": \"2024-02-15T14:30:00Z\",\n  \"descricao\": \"Workshop introdutório sobre React.js\"\n}",
+							"raw": "{\n  \"nome\": \"Workshop de Java\",\n  \"data\": \"2024-02-15T14:30:00Z\",\n  \"descricao\": \"Workshop introdutório sobre React.js\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -363,13 +275,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/events/148068b5-af7e-4b8e-af8f-5a45a6f24ad6",
+							"raw": "{{baseUrl}}/events/fda9aaa2-f70d-439e-b5ab-9650b7d10d30",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"events",
-								"148068b5-af7e-4b8e-af8f-5a45a6f24ad6"
+								"fda9aaa2-f70d-439e-b5ab-9650b7d10d30"
 							]
 						}
 					},
@@ -383,16 +295,9 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:3000/api/v1/health",
-					"protocol": "http",
+					"raw": "{{baseUrl}}health",
 					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"api",
-						"v1",
-						"health"
+						"{{baseUrl}}health"
 					]
 				},
 				"description": "Verifica se o servidor está funcionando"
