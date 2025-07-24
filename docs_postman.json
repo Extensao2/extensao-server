@@ -318,7 +318,7 @@
 	"variable": [
 		{
 			"key": "baseUrl",
-			"value": "http://localhost:3000/api/v1",
+			"value": "https://extensaoads2.sj.ifsc.edu.br/api/v1/",
 			"type": "string"
 		},
 		{
