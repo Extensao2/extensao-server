@@ -1,286 +1,157 @@
-# Projeto de Extensão 2
-	
-## 1. Como executar o Projeto:
+# Sistema de Aprendizagem API
 
-- Clonar o repositório:  
-`git clone https://github.com/Extensao2/extensao-server.git`
+API RESTful para gerenciamento de recursos de aprendizagem e eventos, construída com Express.js, MongoDB e autenticação OAuth Google.
 
-- Iniciar a execução:  
-`make start`
-- Interromper a execução:  
-`make stop`
+## 🚀 Funcionalidades
 
-## 2. Premissa do Projeto:
+- **Autenticação OAuth**: Sistema de login com Google OAuth e sessões baseadas em cookies
+- **Recursos**: CRUD completo para recursos de aprendizagem com busca por título
+- **Eventos**: Gerenciamento completo de eventos com data e descrição
+- **Validação**: Validação robusta de dados de entrada
+- **Base64**: Suporte a conteúdo em formato base64 para recursos
 
-Construir uma API robusta para uma plataforma de estudos não-linear, possibilitando que o usuário a pesquise conteúdos e presonalize sua jornada de aprendizagem seguindo suas preferências e necessidades.
-	
-## 3. Referências do Projeto:
+## 📋 Pré-requisitos
 
-- [Roadmap.sh](https://roadmap.sh/)
-- [The Odin Project](https://www.theodinproject.com/)
-- [FreeCodeCamp](https://www.freecodecamp.org/)
+- Node.js 18+ 
+- Docker e Docker Compose (para banco de dados)
+- MongoDB (rodando via Docker)
 
-## 4. Fluxo das rotas:
+## 🛠️ Instalação
 
-`POST /login`:
-
-```mermaid
-flowchart TD
-A[POST /login]
-B{Formato válido?}
-C[Consulta token
-junto ao
-Google]
-D[400]
-E{Token válido?}
-F[Consulta se
-usuário existe
-no banco]
-G[401]
-H{Usuário
-existe no
-banco?}
-I[Consulta no
-banco se já
-existe uma
-sessão aberta]
-J[Cadastra
-usuário
-no banco]
-K{Existe uma
-sessão aberta?}
-L[200 + cookie]
-M[Cadastra uma
-nova sessão]
-
-A --> B
-B --> |Sim| C
-B--> |Não| D
-C --> E
-E --> |Sim| F
-E --> |Não| G
-F --> H
-H --> |Sim| I
-H --> |Não| J
-J --> I
-I --> K
-K --> |Sim| L
-K --> |Não| M
-M --> L
+1. **Clone o repositório e instale dependências:**
+```bash
+npm install
 ```
 
----
-
-`GET /resource`:
-
-```mermaid
-flowchart TD
-
-A[GET /resource]
-B{Formato válido?}
-C[Consulta cookie
-e sessão aberta]
-D[400]
-E{Cookie válido?}
-F[Consulta se
-recurso existe]
-G[401]
-H{Recurso existe?}
-I{Possui recurso na 
-cache local?}
-J[404]
-K[200]
-L[304]
-M[Cadastra evento novo]
-
-A --> B
-B --> |Sim| C
-B --> |Não| D
-C --> E
-E --> |Sim| F
-E -->| Não| G
-F --> H
-H --> |Sim| M
-M --> I
-H --> |Não| J
-I --> |Não| K 
-I --> |Sim| L
+2. **Configure variáveis de ambiente:**
+```bash
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
 ```
 
----
-
-`PUT /resource`:
-
-```mermaid
-flowchart TD
-
-A[PUT /resource]
-B{Formato válido?}
-C[Consulta cookie
-e sessão aberta]
-D[400]
-E{Cookie válido?}
-F[Consulta se
-recurso existe]
-G[401]
-H{Recurso existe?}
-I[403]
-K[201]
-
-subgraph Ação atômica
-J[Cadastra recurso]
-L[Cadastra evento]
-end
-
-A --> B
-B --> |Sim| C
-B --> |Não| D
-C --> E
-E --> |Sim| F
-E -->| Não| G
-F --> H
-H --> |Sim| I
-H --> |Não| J
-J --> L
-L --> K
+3. **Inicie o MongoDB via Docker:**
+```bash
+docker-compose up -d mongodb
 ```
 
----
+4. **Inicie a aplicação:**
+```bash
+# Modo desenvolvimento (com hot reload)
+npm run dev
 
-`PATCH /resource`:
-
-```mermaid
-flowchart TD
-
-A[PATCH /resource]
-B{Formato válido?}
-C[Consulta cookie
-e sessão aberta]
-D[400]
-E{Cookie válido?}
-F[Consulta se
-recurso existe]
-G[401]
-H{Recurso existe?}
-subgraph Ação Atômica
-I[Atualiza recurso]
-L[Cadastra evento]
-end
-J[404]
-K[200]
-
-
-A --> B
-B --> |Sim| C
-B --> |Não| D
-C --> E
-E --> |Sim| F
-E -->| Não| G
-F --> H
-H --> |Sim| I
-H --> |Não| J
-I --> L
-L --> K
+# Modo produção
+npm start
 ```
 
----
+5. **Configure Google OAuth:**
+   - Acesse o [Google Cloud Console](https://console.cloud.google.com/)
+   - Crie um novo projeto ou selecione um existente
+   - Ative a Google+ API
+   - Crie credenciais OAuth 2.0
+   - Configure as URLs de redirecionamento:
+     - Desenvolvimento: `http://localhost:3000/api/v1/auth/google/callback`
+     - Produção: `https://extensaoads2.sj.ifsc.edu.br/api/v1/auth/google/callback`
+   - Atualize o arquivo `.env` com suas credenciais
 
-`DELETE /resource`:
+## 🐳 Docker
 
-```mermaid
-flowchart TD
+Para rodar toda a aplicação com Docker:
 
-A[DELETE /resource]
-B{Formato válido?}
-C[Consulta cookie
-e sessão aberta]
-D[400]
-E{Cookie válido?}
-F[Consulta se
-recurso existe]
-G[401]
-H{Recurso existe?}
-subgraph Ação atômica
-I[Cadastra recurso]
-L[Cadastra evento]
-end
-J[404]
-K[204]
-
-A --> B
-B --> |Sim| C
-B --> |Não| D
-C --> E
-E --> |Sim| F
-E -->| Não| G
-F --> H
-H --> |Sim| I
-H --> |Não| J
-I --> L
-L --> K
-```
----
-
-`GET /events`:
-
-```mermaid
-flowchart TD
-
-A[GET /events]
-B{Formato válido?}
-C[Consulta cookie
-e sessão aberta]
-D[400]
-E{Cookie válido?}
-G[401]
-I{Possui recurso na 
-cache local?}
-K[200]
-L[304]
-
-A --> B
-B --> |Sim| C
-B --> |Não| D
-C --> E
-E --> |Sim| I
-E -->| Não| G
-I --> |Não| K 
-I --> |Sim| L
+```bash
+docker-compose up -d
 ```
 
----
+## 📚 API Endpoints
 
-`GET /events (com filtro)`:
+### Autenticação
+- `GET /api/v1/auth/google` - Iniciar login com Google OAuth
+- `GET /api/v1/auth/google/callback` - Callback do Google OAuth
+- `GET /api/v1/me` - Obter informações do usuário atual
+- `GET /api/v1/status` - Verificar status de autenticação
+- `POST /api/v1/logout` - Logout do usuário
 
-```mermaid
-flowchart TD
+### Recursos
+- `PUT /api/v1/resource` - Criar recurso
+- `GET /api/v1/resource/:id` - Obter recurso por ID
+- `PATCH /api/v1/resource/:id` - Atualizar recurso
+- `DELETE /api/v1/resource/:id` - Deletar recurso
+- `GET /api/v1/resources/search?title=texto` - Buscar recursos
 
-A[GET /events filtro]
-B{Formato da requisicao valido?}
-C[Consulta cookie e sessao aberta]
-D[400]
-E{Cookie e sessao validos?}
-F[Consulta existencia de eventos com filtros]
-G[401]
-H{Existe evento com filtros?}
-I{Possui recurso no cache local?}
-J[404]
-K[200]
-L[304]
+### Eventos
+- `GET /api/v1/events` - Listar todos os eventos
+- `POST /api/v1/events` - Criar evento
+- `GET /api/v1/events/:id` - Obter evento por ID
+- `PUT /api/v1/events/:id` - Atualizar evento
+- `DELETE /api/v1/events/:id` - Deletar evento
 
-A --> B
-B --> |Sim| C
-B --> |Nao| D
+## 🔒 Autenticação
 
-C --> E
-E --> |Sim| F
-E --> |Nao| G
+A API usa autenticação OAuth com Google e sessões baseadas em cookies. 
 
-F --> H
-H --> |Sim| I
-H --> |Nao| J
+### Fluxo de Autenticação:
+1. Acesse `GET /api/v1/auth/google` para iniciar o login
+2. O usuário será redirecionado para o Google
+3. Após autorização, será redirecionado de volta com sessão ativa
+4. Um cookie `session_id` será definido automaticamente
 
-I --> |Sim| L
-I --> |Nao| K
+## 📝 Exemplos de Uso
+
+### Criar um Recurso:
+```json
+PUT /api/v1/resource
+{
+  "title": "Introdução ao JavaScript",
+  "content": "Y29udGXDum RvIGN1cnNvIGVtIGJhc2U2NA=="
+}
+```
+
+### Criar um Evento:
+```json
+POST /api/v1/events
+{
+  "nome": "Workshop de React",
+  "data": "2024-02-15T14:30:00Z",
+  "descricao": "Workshop introdutório sobre React.js"
+}
+```
+
+## 🏗️ Estrutura do Projeto
 
 ```
+src/
+├── config/          # Configurações (database)
+├── middleware/      # Middlewares (auth, errorHandler)
+├── models/          # Modelos do MongoDB
+├── routes/          # Rotas da API
+└── server.js        # Arquivo principal
+```
+
+## 🚦 Status da API
+
+Verifique se a API está funcionando:
+```
+GET /api/v1/health
+```
+
+## 🔧 Variáveis de Ambiente
+
+```env
+MONGODB_URI=mongodb://localhost:27017/sistema-aprendizagem
+SESSION_SECRET=your-super-secret-session-key
+PORT=3000
+NODE_ENV=development
+GOOGLE_CLIENT_ID=your-google-client-id-here
+GOOGLE_CLIENT_SECRET=your-google-client-secret-here
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+```
+
+## 📦 Dependências Principais
+
+- **Express.js**: Framework web
+- **Mongoose**: ODM para MongoDB
+- **express-session**: Gerenciamento de sessões
+- **connect-mongo**: Store de sessões no MongoDB
+- **Passport.js**: Middleware de autenticação
+- **passport-google-oauth20**: Estratégia OAuth Google
+- **express-validator**: Validação de dados
+- **uuid**: Geração de IDs únicos
