@@ -9,9 +9,10 @@ on:
 
 jobs:
   push-notify:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Push notification on Discord
+      - name: Push notification
         uses: Ilshidur/action-discord@0.4.0
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -19,15 +20,16 @@ jobs:
           args: "New push on {{ EVENT_PAYLOAD.repository.full_name }} by {{ GITHUB_ACTOR }}"
 
   pr-notify:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Pull Request notification on Discord
+      - name: Pull Request notification
         uses: Ilshidur/action-discord@0.4.0
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
           args: |
-            Pull Request **{{ EVENT_PAYLOAD.pull_request.title }}**  
-            Author: {{ EVENT_PAYLOAD.pull_request.user.login }}  
-            Link: {{ EVENT_PAYLOAD.pull_request.html_url }}  
+            Pull Request **{{ EVENT_PAYLOAD.pull_request.title }}**
+            Author: {{ EVENT_PAYLOAD.pull_request.user.login }}
+            Link: {{ EVENT_PAYLOAD.pull_request.html_url }}
             Status: {{ EVENT_PAYLOAD.action }}
