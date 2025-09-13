@@ -1,0 +1,92 @@
+@baseUrl = http://localhost:3000/api/v1
+@authToken = {{authToken}}
+@resourceId = {{resourceId}}
+@userId = {{userId}}
+
+###
+# @name loginWithGoogle
+GET {{baseUrl}}/auth/google
+
+###
+# @name logout
+POST {{baseUrl}}/logout
+Authorization: Bearer {{authToken}}
+
+###
+# @name me
+GET {{baseUrl}}/me
+Authorization: Bearer {{authToken}}
+
+###
+# @name status
+GET {{baseUrl}}/status
+
+###
+# @name healthCheck
+GET {{baseUrl}}/health
+
+###
+# ===============================
+# Recursos - Admin
+# ===============================
+
+# @name createResource
+PUT {{baseUrl}}/resource
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "title": "Introdução ao Java",
+  "content": "Y29udGXDum RvIGN1cnNvIGVtIGJhc2U2NA=="
+}
+
+###
+# @name updateResource
+PATCH {{baseUrl}}/resource/{{resourceId}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "title": "JavaScript Avançado - Atualizado"
+}
+
+###
+# @name deleteResource
+DELETE {{baseUrl}}/resource/{{resourceId}}
+Authorization: Bearer {{authToken}}
+
+###
+# @name listResources
+GET {{baseUrl}}/resources/search
+Authorization: Bearer {{authToken}}
+
+###
+# @name getResourceById
+GET {{baseUrl}}/resource/{{resourceId}}
+Authorization: Bearer {{authToken}}
+
+###
+# ===============================
+# Eventos
+# ===============================
+
+# @name listEvents
+GET {{baseUrl}}/events
+Authorization: Bearer {{authToken}}
+
+###
+# @name createEvent
+POST {{baseUrl}}/events
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "nome": "Workshop de Java",
+  "data": "2024-02-15T14:30:00Z",
+  "descricao": "Workshop introdutório sobre React.js"
+}
+
+###
+# @name getEventById
+GET {{baseUrl}}/events/fda9aaa2-f70d-439e-b5ab-9650b7d10d30
+Authorization: Bearer {{authToken}}
