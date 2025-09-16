@@ -1,13 +1,15 @@
-import * as getAllEvents from './get-all.js';
-import * as createEvent from './create.js';
-import * as getEventById from './get-by-id.js';
-import * as updateEvent from './update.js';
-import * as deleteEvent from './delete.js';
+import { getAllEvents } from './get-all.js';
+import { createEvent } from './create.js';
+import { getEventById } from './get-by-id.js';
+import { updateEvent } from './update.js';
+import { deleteEvent } from './delete.js';
+
+export { getAllEvents, createEvent, getEventById, updateEvent, deleteEvent };
 
 export const eventController = {
-  ...getAllEvents,
-  ...createEvent,
-  ...getEventById,
-  ...updateEvent,
-  ...deleteEvent
+  getAllEvents,
+  createEvent,
+  getEventById,
+  updateEvent,
+  deleteEvent
 };

@@ -1,9 +1,10 @@
-import * as login from './login.js';
-import * as logout from './logout.js';
-import * as profile from './profile.js';
+import { login, getMe, logout, status } from './login.js';
+
+export { login, getMe, logout, status };
 
 export const authController = {
-  ...login,
-  ...logout,
-  ...profile
+  login,
+  getMe,
+  logout,
+  status
 };

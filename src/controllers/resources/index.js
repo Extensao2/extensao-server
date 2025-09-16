@@ -1,13 +1,15 @@
-import * as createResource from './create.js';
-import * as getResourceById from './get-by-id.js';
-import * as updateResource from './update.js';
-import * as deleteResource from './delete.js';
-import * as searchResources from './search.js';
+import { createResource } from './create.js';
+import { getResourceById } from './get-by-id.js';
+import { updateResource } from './update.js';
+import { deleteResource } from './delete.js';
+import { searchResources } from './search.js';
+
+export { createResource, getResourceById, updateResource, deleteResource, searchResources };
 
 export const resourceController = {
-  ...createResource,
-  ...getResourceById,
-  ...updateResource,
-  ...deleteResource,
-  ...searchResources
+  createResource,
+  getResourceById,
+  updateResource,
+  deleteResource,
+  searchResources
 };
