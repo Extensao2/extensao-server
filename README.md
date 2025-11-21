@@ -126,6 +126,23 @@ src/
 └── server.js        # Arquivo principal
 ```
 
+## ✅ Testes
+
+Execute os testes unitários:
+
+```bash
+# Executar todos os testes
+npm test
+
+# Executar testes em modo watch (re-executa ao salvar arquivos)
+npm run test:watch
+
+# Executar um arquivo específico
+npm test -- tests/routes/auth.test.js
+```
+
+Os testes estão localizados em `tests/` e utilizam Jest e Supertest para testar os endpoints da API.
+
 ## 🚦 Status da API
 
 Verifique se a API está funcionando:
