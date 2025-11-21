@@ -1,0 +1,96 @@
+import request from 'supertest';
+import express from 'express';
+import session from 'express-session';
+import authRoutes from '../../src/routes/auth.js';
+import { describe, it, expect } from '@jest/globals';
+
+// Criar app de teste
+const createTestApp = () => {
+  const app = express();
+  app.use(express.json());
+  
+  // Mock de sessão simplificada para testes
+  app.use(session({
+    secret: 'test-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }
+  }));
+  
+  return app;
+};
+
+describe('GET /api/v1/status', () => {
+  describe('Happy Path - Usuário autenticado', () => {
+    it('deve retornar authenticated: true e dados do usuário quando req.user existe', async () => {
+      const app = createTestApp();
+      
+      // IMPORTANTE: Middleware ANTES das rotas, com o mesmo prefixo
+      app.use('/api/v1', (req, res, next) => {
+        req.user = {
+          _id: '507f1f77bcf86cd799439011',
+          email: 'test@example.com',
+          name: 'Test User',
+          avatar: 'https://example.com/avatar.jpg'
+        };
+        next();
+      });
+      
+      // Registrar rotas DEPOIS do middleware
+      app.use('/api/v1', authRoutes);
+      
+      const response = await request(app)
+        .get('/api/v1/status')
+        .expect(200);
+      
+      expect(response.body).toEqual({
+        authenticated: true,
+        user: {
+          id: '507f1f77bcf86cd799439011',
+          email: 'test@example.com',
+          name: 'Test User',
+          avatar: 'https://example.com/avatar.jpg'
+        }
+      });
+    });
+  });
+
+  describe('Falha - Usuário não autenticado', () => {
+    it('deve retornar authenticated: false e user: null quando req.user não existe', async () => {
+      const app = createTestApp();
+      
+      // Middleware define req.user como null
+      app.use('/api/v1', (req, res, next) => {
+        req.user = null;
+        next();
+      });
+      
+      app.use('/api/v1', authRoutes);
+      
+      const response = await request(app)
+        .get('/api/v1/status')
+        .expect(200);
+      
+      expect(response.body).toEqual({
+        authenticated: false,
+        user: null
+      });
+    });
+
+    it('deve retornar authenticated: false quando req.user é undefined', async () => {
+      const app = createTestApp();
+      
+      // Não definir middleware - req.user será undefined
+      app.use('/api/v1', authRoutes);
+      
+      const response = await request(app)
+        .get('/api/v1/status')
+        .expect(200);
+      
+      expect(response.body).toEqual({
+        authenticated: false,
+        user: null
+      });
+    });
+  });
+});
