@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import resourceRoutes from './routes/resources.js';
 import eventoRoutes from './routes/events.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -54,6 +55,40 @@ app.use(passport.session());
 app.use('/api/v1', authRoutes);
 app.use('/api/v1', resourceRoutes);
 app.use('/api/v1', eventoRoutes);
+
+// --- NOVO: Modelo e endpoint de questões do ENEM ---
+const QuestaoSchema = new mongoose.Schema({
+  disciplina: String,
+  ano: Number,
+  enunciado: String,
+  alternativas: {
+    A: String,
+    B: String,
+    C: String,
+    D: String,
+    E: String
+  },
+  resposta_correta: String
+});
+
+const Questao = mongoose.model('Questao', QuestaoSchema, 'questoes_enem');
+
+// Endpoint para buscar questões
+app.get('/api/v1/questoes', async (req, res) => {
+  try {
+    const { disciplina, ano } = req.query;
+    const filtro = {};
+    if (disciplina) filtro.disciplina = disciplina;
+    if (ano) filtro.ano = parseInt(ano);
+
+    const questoes = await Questao.find(filtro);
+    res.json(questoes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao buscar questões' });
+  }
+});
+// --- FIM: endpoint questões ---
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
