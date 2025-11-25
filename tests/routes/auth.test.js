@@ -214,3 +214,50 @@ describe('GET /api/v1/status', () => {
 });
 
 });
+
+describe('GET /api/v1/auth/google/callback', () => {
+  it('deve redirecionar corretamente no Happy Path', async () => {
+    const app = createTestApp();
+
+    // Mock do passport.authenticate para simular sucesso
+    const mockPassport = (req, res, next) => {
+      req.user = {
+        _id: '507f1f77bcf86cd799439011',
+        email: 'test@example.com',
+        name: 'Test User',
+        avatar: 'https://example.com/avatar.jpg',
+        provider: 'google'
+      };
+      next();
+    };
+
+    jest.spyOn(passport, 'authenticate').mockImplementation(() => mockPassport);
+
+    app.use('/api/v1', authRoutes);
+
+    const response = await request(app)
+      .get('/api/v1/auth/google/callback')
+      .expect(302);
+
+    expect(response.headers.location).toBe('https://extensaoads2.sj.ifsc.edu.br/api/v1/events');
+  });
+
+  it('deve redirecionar para failureRedirect quando falhar a autenticação', async () => {
+    const app = createTestApp();
+
+    // Mock do passport.authenticate simulando falha
+    const mockPassportFail = (req, res, next) => {
+      return res.redirect('/login?error=oauth_failed');
+    };
+
+    jest.spyOn(passport, 'authenticate').mockImplementation(() => mockPassportFail);
+
+    app.use('/api/v1', authRoutes);
+
+    const response = await request(app)
+      .get('/api/v1/auth/google/callback')
+      .expect(302);
+
+    expect(response.headers.location).toBe('/login?error=oauth_failed');
+  });
+});
