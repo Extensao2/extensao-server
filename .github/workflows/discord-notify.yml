@@ -8,17 +8,6 @@ on:
     types: [opened, closed, reopened, ready_for_review]
 
 jobs:
-  push-notify:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Push notification
-        uses: Ilshidur/action-discord@0.4.0
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        with:
-          args: "New push on {{ EVENT_PAYLOAD.repository.full_name }} by {{ GITHUB_ACTOR }}"
-
   pr-notify:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
