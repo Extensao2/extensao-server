@@ -1,5 +1,7 @@
 import express from 'express';
 import passport from 'passport';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const router = express.Router();
 
@@ -17,7 +19,7 @@ router.get('/auth/google/callback',
   }),
   (req, res) => {
     // Successful authentication
-    res.redirect('https://extensaoads2.sj.ifsc.edu.br/api/v1/events');
+    res.redirect(`${process.env.FRONTEND_URL}/api/v1/events`);
   }
 );
 

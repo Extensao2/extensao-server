@@ -8,8 +8,8 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-password123}
     volumes:
       - mongodb_data:/data/db
     networks:
@@ -22,9 +22,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      MONGODB_URI: mongodb://admin:password123@mongodb:27017/sistema-aprendizagem?authSource=admin
-      SESSION_SECRET: your-super-secret-session-key-change-this-in-production
-      NODE_ENV: development
+      MONGODB_URI: ${MONGODB_URI:-mongodb://admin:password123@mongodb:27017/sistema-aprendizagem?authSource=admin}
+      SESSION_SECRET: ${SESSION_SECRET:-your-super-secret-session-key-change-this-in-production}
+      NODE_ENV: ${NODE_ENV:-development}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:3000/api/v1/auth/google/callback}
     depends_on:
       - mongodb
     volumes:

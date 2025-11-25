@@ -22,7 +22,7 @@ connectDB();
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://extensaoads2.sj.ifsc.edu.br'] 
+    ? [process.env.FRONTEND_URL] 
     : true,
   credentials: true
 }));
