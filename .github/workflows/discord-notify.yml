@@ -3,9 +3,9 @@ name: Notify on Discord
 on:
   push:
     branches:
-      - main  # change if needed
+      - main
   pull_request:
-    types: [opened, closed, reopened]
+    types: [opened, closed, reopened, ready_for_review]
 
 jobs:
   push-notify:
@@ -20,7 +20,7 @@ jobs:
           args: "New push on {{ EVENT_PAYLOAD.repository.full_name }} by {{ GITHUB_ACTOR }}"
 
   pr-notify:
-    if: github.event_name == 'pull_request'
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Pull Request notification
@@ -33,3 +33,30 @@ jobs:
             Author: {{ EVENT_PAYLOAD.pull_request.user.login }}
             Link: {{ EVENT_PAYLOAD.pull_request.html_url }}
             Status: {{ EVENT_PAYLOAD.action }}
+
+      - name: Format reviewers list
+        id: reviewers
+        run: |
+          echo "reviewers=$(jq -r '.pull_request.requested_reviewers[].login' <<< '${{ toJson(github.event) }}' | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
+      - name: Notify Discord - PR Ready
+        uses: Ilshidur/action-discord@0.4.0
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+            PR Ready for Review **{{ EVENT_PAYLOAD.pull_request.title }}**
+            Author: {{ EVENT_PAYLOAD.pull_request.user.login }}
+            Link: {{ EVENT_PAYLOAD.pull_request.html_url }}
+            Reviewers: ${{ steps.reviewers.outputs.reviewers }}
+
+      - name: Notify each reviewer
+        if: steps.reviewers.outputs.reviewers != ''
+        run: |
+          for reviewer in ${{ steps.reviewers.outputs.reviewers }}; do
+            curl -H "Content-Type: application/json" \
+                 -X POST \
+                 -d "{\"content\": \"Hi <@${reviewer}>, could you please review this PR?\n${{ github.event.pull_request.html_url }}\"}" \
+                 ${{ secrets.DISCORD_WEBHOOK }};
+          donename: Notify on Discord
+
