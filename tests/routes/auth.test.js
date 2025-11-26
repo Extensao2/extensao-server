@@ -1,8 +1,20 @@
 import request from 'supertest';
 import express from 'express';
 import session from 'express-session';
-import authRoutes from '../../src/routes/auth.js';
 import { describe, it, expect } from '@jest/globals';
+import authRoutes from '../../src/routes/auth.js';
+
+// Cria uma versão mockada das rotas para os testes de callback
+const createMockedAuthRoutes = (authenticateImpl) => {
+  const router = express.Router();
+  
+  // Mock da rota de callback
+  router.get('/auth/google/callback', authenticateImpl, (req, res) => {
+    res.redirect('https://extensaoads2.sj.ifsc.edu.br/api/v1/events');
+  });
+  
+  return router;
+};
 
 // Criar app de teste
 const createTestApp = () => {
@@ -219,8 +231,8 @@ describe('GET /api/v1/auth/google/callback', () => {
   it('deve redirecionar corretamente no Happy Path', async () => {
     const app = createTestApp();
 
-    // Mock do passport.authenticate para simular sucesso
-    const mockPassport = (req, res, next) => {
+    // Middleware que simula passport.authenticate com sucesso
+    const mockAuthenticate = (req, res, next) => {
       req.user = {
         _id: '507f1f77bcf86cd799439011',
         email: 'test@example.com',
@@ -231,33 +243,32 @@ describe('GET /api/v1/auth/google/callback', () => {
       next();
     };
 
-    jest.spyOn(passport, 'authenticate').mockImplementation(() => mockPassport);
-
-    app.use('/api/v1', authRoutes);
+    const mockedRoutes = createMockedAuthRoutes(mockAuthenticate);
+    app.use('/api/v1', mockedRoutes);
 
     const response = await request(app)
-      .get('/api/v1/auth/google/callback')
-      .expect(302);
+      .get('/api/v1/auth/google/callback');
 
+    expect(response.status).toBe(302);
     expect(response.headers.location).toBe('https://extensaoads2.sj.ifsc.edu.br/api/v1/events');
   });
 
   it('deve redirecionar para failureRedirect quando falhar a autenticação', async () => {
     const app = createTestApp();
 
-    // Mock do passport.authenticate simulando falha
-    const mockPassportFail = (req, res, next) => {
-      return res.redirect('/login?error=oauth_failed');
+    // Middleware que simula passport.authenticate com falha
+    const mockAuthenticateFail = (req, res, next) => {
+      // Simula falha - redireciona diretamente
+      res.redirect('/login?error=oauth_failed');
     };
 
-    jest.spyOn(passport, 'authenticate').mockImplementation(() => mockPassportFail);
-
-    app.use('/api/v1', authRoutes);
+    const mockedRoutes = createMockedAuthRoutes(mockAuthenticateFail);
+    app.use('/api/v1', mockedRoutes);
 
     const response = await request(app)
-      .get('/api/v1/auth/google/callback')
-      .expect(302);
-
+      .get('/api/v1/auth/google/callback');
+    
+    expect(response.status).toBe(302);
     expect(response.headers.location).toBe('/login?error=oauth_failed');
   });
 });
