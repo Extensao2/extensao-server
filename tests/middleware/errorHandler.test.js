@@ -1,5 +1,5 @@
 import { errorHandler } from '../../src/middleware/errorHandler.js';
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 
 describe('errorHandler middleware', () => {
   let req;
