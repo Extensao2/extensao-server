@@ -38,13 +38,13 @@ const eventoSchema = new mongoose.Schema({
 });
 
 // Update the updatedAt field before saving
-eventoSchema.pre('save', function(next) {
+eventoSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });
 
 // Transform output to match API spec
-eventoSchema.methods.toJSON = function() {
+eventoSchema.methods.toJSON = function () {
   const obj = this.toObject();
   return {
     id: obj.id,

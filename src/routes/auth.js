@@ -4,16 +4,18 @@ import passport from 'passport';
 const router = express.Router();
 
 // Google OAuth login
-router.get('/auth/google', 
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'] 
+router.get(
+  '/auth/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email']
   })
 );
 
 // Google OAuth callback
-router.get('/auth/google/callback',
-  passport.authenticate('google', { 
-    failureRedirect: '/login?error=oauth_failed' 
+router.get(
+  '/auth/google/callback',
+  passport.authenticate('google', {
+    failureRedirect: '/login?error=oauth_failed'
   }),
   (req, res) => {
     // Successful authentication
@@ -23,7 +25,7 @@ router.get('/auth/google/callback',
 
 // Traditional login endpoint (for compatibility)
 router.post('/login', (req, res) => {
-  res.status(400).json({ 
+  res.status(400).json({
     error: 'Traditional login disabled. Please use Google OAuth.',
     oauth_url: '/api/v1/auth/google'
   });
@@ -46,16 +48,16 @@ router.get('/me', (req, res) => {
 
 // Logout endpoint
 router.post('/logout', (req, res) => {
-  req.logout((err) => {
+  req.logout(err => {
     if (err) {
       return res.status(500).json({ error: 'Could not log out' });
     }
-    
-    req.session.destroy((err) => {
+
+    req.session.destroy(err => {
       if (err) {
         return res.status(500).json({ error: 'Could not destroy session' });
       }
-      
+
       res.clearCookie('session_id');
       res.status(200).json({ message: 'Logout successful' });
     });
@@ -66,12 +68,14 @@ router.post('/logout', (req, res) => {
 router.get('/status', (req, res) => {
   res.json({
     authenticated: !!req.user,
-    user: req.user ? {
-      id: req.user._id,
-      email: req.user.email,
-      name: req.user.name,
-      avatar: req.user.avatar
-    } : null
+    user: req.user
+      ? {
+          id: req.user._id,
+          email: req.user.email,
+          name: req.user.name,
+          avatar: req.user.avatar
+        }
+      : null
   });
 });
 

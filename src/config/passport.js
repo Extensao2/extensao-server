@@ -1,7 +1,7 @@
-import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import User from "../models/User.js";
-import dotenv from "dotenv";
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import User from '../models/User.js';
+import dotenv from 'dotenv';
 dotenv.config();
 
 // Google OAuth Strategy
@@ -10,7 +10,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -27,7 +27,7 @@ passport.use(
         if (user) {
           // Link Google account to existing user
           user.googleId = profile.id;
-          user.provider = "google";
+          user.provider = 'google';
           await user.save();
           return done(null, user);
         }
@@ -38,13 +38,13 @@ passport.use(
           email: profile.emails[0].value,
           name: profile.displayName,
           avatar: profile.photos[0]?.value,
-          provider: "google",
+          provider: 'google'
         });
 
         await user.save();
         done(null, user);
       } catch (error) {
-        console.error("Google OAuth error:", error);
+        console.error('Google OAuth error:', error);
         done(error, null);
       }
     }

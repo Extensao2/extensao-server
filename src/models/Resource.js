@@ -33,13 +33,13 @@ const resourceSchema = new mongoose.Schema({
 });
 
 // Update the updatedAt field before saving
-resourceSchema.pre('save', function(next) {
+resourceSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });
 
 // Transform output to match API spec
-resourceSchema.methods.toJSON = function() {
+resourceSchema.methods.toJSON = function () {
   const obj = this.toObject();
   return {
     id: obj.id,
