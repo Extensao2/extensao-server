@@ -56,7 +56,7 @@ describe('GET /api/v1/auth/google', () => {
   });
 
   describe('Falha - Erro no middleware de autenticação', () => {
-    it('deve retornar erro quando o passport.authenticate lançar exceção', async () => {
+    it('deve retornar erro quando o passport.authenticate passar erro para next()', async () => {
       app = express();
       app.use(express.json());
       app.use(session({
