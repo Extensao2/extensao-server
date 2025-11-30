@@ -1,7 +1,7 @@
+import mongoose from 'mongoose';
 
-const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
-const questionSchema = require('./Question');
+import { questionSchema } from './Question.js';
 
 const phaseSchema = new Schema({
   name: { type: String, required: true },
@@ -11,6 +11,6 @@ const phaseSchema = new Schema({
   questions: [questionSchema] // 1:N Perguntas
 });
 
-
 const Phase = model('Phase', phaseSchema);
-module.exports = { Phase };
+
+export default Phase;

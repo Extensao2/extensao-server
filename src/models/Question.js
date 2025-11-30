@@ -1,9 +1,8 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
+
 const { Schema, model } = mongoose;
 
-
-
-const questionSchema = new Schema({
+export const questionSchema = new Schema({
   description: { type: String, required: true },
   subject: String,
   topic: String,
@@ -11,6 +10,6 @@ const questionSchema = new Schema({
   correctAlternative: { type: String, required: true }
 });
 
-
 const Question = model('Question', questionSchema);
-module.exports = { Question };
+
+export default Question;

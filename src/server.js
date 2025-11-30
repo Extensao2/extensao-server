@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import resourceRoutes from './routes/resources.js';
 import eventoRoutes from './routes/events.js';
 import questoesRoutes from './routes/questoes.js'; // <--- NOVO
+import skillUpRoutes from './routes/skillup.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -53,11 +54,25 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    if (!req.user) {
+      req.user = {
+        _id: '000000000000000000000000', // opcional, só pra manter formato
+        email: 'mock.user@example.com',
+        name: 'Usuário Mock',
+      };
+    }
+    next();
+  });
+}
+
 // Routes
 app.use('/api/v1', authRoutes);
 app.use('/api/v1', resourceRoutes);
 app.use('/api/v1', eventoRoutes);
 app.use('/api/v1', questoesRoutes); // <--- ROTAS DE QUESTÕES
+app.use('/api/v1', skillUpRoutes);
 
 // Health check
 app.get('/api/v1/health', (req, res) => {

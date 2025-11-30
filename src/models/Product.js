@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
+
 const { Schema, model } = mongoose;
 
 const productTypes = ['headwear', 'gloves', 'weapon', 'footwear'];
@@ -14,4 +15,4 @@ const productSchema = new Schema({
 
 const Product = model('Product', productSchema);
 
-module.exports = { Product };
+export default Product;
