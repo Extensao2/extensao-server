@@ -5,11 +5,13 @@ import MongoStore from 'connect-mongo';
 import dotenv from 'dotenv';
 import passport from './config/passport.js';
 import { connectDB } from './config/database.js';
+
 import authRoutes from './routes/auth.js';
 import resourceRoutes from './routes/resources.js';
 import eventoRoutes from './routes/events.js';
+import questoesRoutes from './routes/questoes.js'; // <--- NOVO
+
 import { errorHandler } from './middleware/errorHandler.js';
-import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -38,12 +40,12 @@ app.use(session({
   name: 'session_id',
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
-    touchAfter: 24 * 3600 // lazy session update
+    touchAfter: 24 * 3600
   }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
@@ -55,40 +57,7 @@ app.use(passport.session());
 app.use('/api/v1', authRoutes);
 app.use('/api/v1', resourceRoutes);
 app.use('/api/v1', eventoRoutes);
-
-// --- NOVO: Modelo e endpoint de questões do ENEM ---
-const QuestaoSchema = new mongoose.Schema({
-  disciplina: String,
-  ano: Number,
-  enunciado: String,
-  alternativas: {
-    A: String,
-    B: String,
-    C: String,
-    D: String,
-    E: String
-  },
-  resposta_correta: String
-});
-
-const Questao = mongoose.model('Questao', QuestaoSchema, 'questoes_enem');
-
-// Endpoint para buscar questões
-app.get('/api/v1/questoes', async (req, res) => {
-  try {
-    const { disciplina, ano } = req.query;
-    const filtro = {};
-    if (disciplina) filtro.disciplina = disciplina;
-    if (ano) filtro.ano = parseInt(ano);
-
-    const questoes = await Questao.find(filtro);
-    res.json(questoes);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao buscar questões' });
-  }
-});
-// --- FIM: endpoint questões ---
+app.use('/api/v1', questoesRoutes); // <--- ROTAS DE QUESTÕES
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
