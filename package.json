@@ -6,15 +6,16 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "jest": {
     "testEnvironment": "node",
     "transform": {},
-    "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
-    }
+    "moduleFileExtensions": ["js"],
+    "moduleNameMapper": {},
+    "setupFiles": ["<rootDir>/tests/routes/setup.env.js"]
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@jest/globals": "^30.2.0",
     "jest": "^30.2.0",
+    "jest-environment-node": "^30.2.0",
     "supertest": "^7.1.4"
   }
 }
