@@ -82,7 +82,7 @@ class SkillUpController {
       const userSkill = await getOrCreateUserSkillUp(req.user);
       const playedCount = Array.isArray(userSkill.playedPhases) ? userSkill.playedPhases.length : 0;
 
-      return res.json({ canAccess: playedCount >= 10 });
+      return res.json({ data: {canAccess: playedCount >= 10 }});
     } catch (error) {
       console.error('Error on /game-mode/can-access-recommendation-mode:', error);
       return res.status(500).json({ error: 'Internal server error' });
@@ -145,7 +145,7 @@ class SkillUpController {
       });
 
       const result = Array.from(groupsMap.values());
-      return res.json(result);
+      return res.json({ data: result});
 
     } catch (error) {
       console.error('Error on /campaign/phase-groups:', error);
