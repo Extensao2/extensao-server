@@ -313,8 +313,9 @@ class SkillUpController {
 
       const product = await Product.findById(productId).lean();
 
-      if (!product) {
-        return res.status(404).json({ error: 'Product not found' });
+      const alreadyOwns = userSkill.itemsOwned.some(id => id.toString() === product._id.toString());
+      if (alreadyOwns) {
+        return res.status(400).json({ error: 'You already own this product' });
       }
 
       if (userSkill.coins < product.price) {
@@ -347,9 +348,15 @@ class SkillUpController {
         return res.status(404).json({ error: 'Product not found' });
       }
 
-      if (!userSkill.itemsOwned.includes(product._id)) {
-        return res.status(400).json({ error: 'Item already equipped' });
+      const ownsItem = userSkill.itemsOwned.some(id => id.toString() === product._id.toString());
+      if (!ownsItem) {
+        return res.status(400).json({ error: 'You do not own this item' });
       }
+
+      const alreadyEquipped = userSkill.equippedItems.some(id => id.toString() === product._id.toString());
+      if (alreadyEquipped) {
+        return res.status(400).json({ error: 'Item already equipped' });
+       }
       userSkill.equippedItems.push(product._id);
       await userSkill.save();
 

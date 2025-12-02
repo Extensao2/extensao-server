@@ -6,7 +6,7 @@ const userSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   coins: { type: Number, default: 0 },
-  lifesRemaining: { type: Number, default: 3 },
+  lifesRemaining: { type: Number, default: 5 },
   dateLostLife: Date,
   mathSkillPoints: { type: Number, default: 0 },
   scienceSkillPoints: { type: Number, default: 0 },
