@@ -1,95 +1,12 @@
-import UserSkillUp from '../models/UserSkillUp.js';
-import Phase from '../models/Phase.js';
-import Product from '../models/Product.js'; // CORREÇÃO: Necessário para o populate em getUserMe funcionar
-import Question from '../models/Question.js';
-
-// Mapa constante para definir os nomes dos grupos baseados no ID
-const GROUP_NAMES = {
-  1: 'Aventura em Alto Mar',
-  2: 'Jornada nas Montanhas',
-  3: 'Expedição na Floresta',
-  4: 'Viagem pelo Deserto',
-  5: 'Mundo Subterrâneo'
-};
-
-/**
- * Busca o documento UserSkillUp associado ao usuário ou cria um novo
- * registro com valores padrão caso ainda não exista.
- *
- * @param {{ email: string, name?: string }} user Usuário autenticado (req.user).
- * @returns {Promise<any>} Documento UserSkillUp correspondente.
- */
-async function getOrCreateUserSkillUp(user) {
-  let userSkill = await UserSkillUp.findOne({ email: user.email });
-
-  if (!userSkill) {
-    userSkill = new UserSkillUp({
-      name: user.name,
-      email: user.email,
-      coins: 0,
-      lifesRemaining: 5
-    });
-    await userSkill.save();
-  }
-
-  return userSkill;
-}
-
-/**
- * Aplica a lógica de regeneração de vidas para o usuário, com base
- * no tempo decorrido desde a última perda de vida.
- *
- * @param {any} userSkill Documento UserSkillUp do usuário.
- * @returns {{ userSkill: any, modified: boolean }} Documento possivelmente
- *          modificado e flag indicando se houve alteração.
- */
-function applyLifeRegeneration(userSkill) {
-  const maxLives = 5;
-  const intervalMs = 10 * 60 * 1000;
-  const now = new Date();
-  let modified = false;
-
-  if (userSkill.lifesRemaining >= maxLives) {
-    if (userSkill.dateLostLife) {
-      userSkill.dateLostLife = null;
-      modified = true;
-    }
-    return { userSkill, modified };
-  }
-
-  if (!userSkill.dateLostLife) {
-    userSkill.dateLostLife = now;
-    modified = true;
-    return { userSkill, modified };
-  }
-
-  const diffMs = now - userSkill.dateLostLife;
-  if (diffMs < intervalMs) {
-    return { userSkill, modified };
-  }
-
-  const intervals = Math.floor(diffMs / intervalMs);
-  if (intervals <= 0) {
-    return { userSkill, modified };
-  }
-
-  const livesToRecover = Math.min(intervals, maxLives - userSkill.lifesRemaining);
-  if (livesToRecover <= 0) {
-    return { userSkill, modified };
-  }
-
-  userSkill.lifesRemaining += livesToRecover;
-  if (userSkill.lifesRemaining >= maxLives) {
-    userSkill.lifesRemaining = maxLives;
-    userSkill.dateLostLife = null;
-  } else {
-    const remainder = diffMs % intervalMs;
-    userSkill.dateLostLife = new Date(now - remainder);
-  }
-
-  modified = true;
-  return { userSkill, modified };
-}
+import SkillUpPhaseService from '../services/SkillUpPhaseService.js';
+import SkillUpUserService from '../services/SkillUpUserService.js';
+import SkillUpStoreService from '../services/SkillUpStoreService.js';
+import SkillUpProgressService from '../services/SkillUpProgressService.js';
+import { toQuestionDto } from '../mappers/SkillUpQuestionMapper.js';
+import { toPhaseDetailDto, toSelectionModePhaseDto } from '../mappers/SkillUpPhaseMapper.js';
+import { buildCampaignGroupsDto } from '../mappers/SkillUpCampaignMapper.js';
+import { toPlayedPhasesAssignmentDto, toPlayedPhasesHistoryDto } from '../mappers/SkillUpProgressMapper.js';
+import { toUserProfileDto } from '../mappers/SkillUpUserMapper.js';
 
 class SkillUpController {
   
@@ -103,10 +20,9 @@ class SkillUpController {
    */
   async canAccessRecommendationMode(req, res) {
     try {
-      const userSkill = await getOrCreateUserSkillUp(req.user);
-      const playedCount = Array.isArray(userSkill.playedPhases) ? userSkill.playedPhases.length : 0;
+      const canAccess = await SkillUpUserService.canAccessRecommendationMode(req.user);
 
-      return res.json({ data: {canAccess: playedCount >= 10 }});
+      return res.json({ data: { canAccess } });
     } catch (error) {
       console.error('Error on /game-mode/can-access-recommendation-mode:', error);
       return res.status(500).json({ error: 'Internal server error' });
@@ -123,61 +39,10 @@ class SkillUpController {
    */
   async getCampaignPhaseGroups(req, res) {
     try {
-      const userSkill = await getOrCreateUserSkillUp(req.user);
-      
-      const allPhases = await Phase.find().sort({ group: 1, position: 1 }).lean();
+      const { allPhases, playedPhasesDocs } = await SkillUpPhaseService.getCampaignGroupsData(req.user);
 
-      const playedPhases = Array.isArray(userSkill.playedPhases) ? userSkill.playedPhases : [];
-      const playedMap = new Map();
-      playedPhases.forEach(p => {
-        if (p.phase) playedMap.set(String(p.phase), p);
-      });
-
-      const groupsMap = new Map();
-
-      [1, 2, 3, 4, 5].forEach(groupId => {
-        groupsMap.set(groupId, {
-          id: groupId,
-          name: GROUP_NAMES[groupId] || `Grupo ${groupId}`,
-          phases: []
-        });
-      });
-
-      allPhases.forEach(phase => {
-        const groupId = phase.group || 1;
-        
-        if (!groupsMap.has(groupId)) {
-          groupsMap.set(groupId, {
-            id: groupId,
-            name: GROUP_NAMES[groupId] || `Grupo ${groupId}`,
-            phases: []
-          });
-        }
-
-        const group = groupsMap.get(groupId);
-        const playedData = playedMap.get(String(phase._id));
-
-        const playedPhaseObj = playedData
-          ? {
-              phaseId: String(phase._id),
-              won: !!playedData.completed,
-              starsEarned: typeof playedData.starsEarned === 'number' ? playedData.starsEarned : 0,
-              score: typeof playedData.score === 'number' ? playedData.score : 0,
-              datePlayed: playedData.datePlayed || null
-            }
-          : null;
-
-        group.phases.push({
-          id: String(phase._id),
-          name: phase.name,
-          isBossPhase: !!phase.isBossPhase,
-          position: phase.position,
-          playedPhase: playedPhaseObj
-        });
-      });
-
-      const result = Array.from(groupsMap.values());
-      return res.json({ data: result});
+      const result = buildCampaignGroupsDto(allPhases, playedPhasesDocs);
+      return res.json({ data: result });
 
     } catch (error) {
       console.error('Error on /campaign/phase-groups:', error);
@@ -196,57 +61,23 @@ class SkillUpController {
   async getPhaseDetail(req, res) {
     try {
       const phaseId = req.params.id;
+      const { phase, questions, playedPhase } = await SkillUpPhaseService.getPhaseDetailData(req.user, phaseId);
 
-      if (!phaseId) {
+      const questionsDto = questions.map(q => toQuestionDto(q));
+      const phaseDto = toPhaseDetailDto(phase, questionsDto, playedPhase);
+
+      return res.json({
+        data: phaseDto
+      });
+    } catch (error) {
+      if (error.message === 'PHASE_ID_REQUIRED') {
         return res.status(400).json({ error: 'phaseId is required' });
       }
 
-      const phase = await Phase.findById(phaseId).lean();
-
-      if (!phase) {
+      if (error.message === 'PHASE_NOT_FOUND') {
         return res.status(404).json({ error: 'Phase not found' });
       }
 
-      const userSkill = await getOrCreateUserSkillUp(req.user);
-      const playedEntry = Array.isArray(userSkill.playedPhases)
-        ? userSkill.playedPhases.find(p => String(p.phase) === String(phase._id))
-        : null;
-
-      const playedPhase = playedEntry
-        ? {
-            phaseId: String(phase._id),
-            won: !!playedEntry.completed,
-            starsEarned: typeof playedEntry.starsEarned === 'number' ? playedEntry.starsEarned : 0,
-            score: typeof playedEntry.score === 'number' ? playedEntry.score : 0,
-            datePlayed: playedEntry.datePlayed || null
-          }
-        : null;
-
-      const questions = await Question.find({ phase: phase._id }).sort({ _id: 1 }).lean();
-
-      const questionsResponse = questions.map(q => ({
-        id: String(q._id),
-        category: q.category,
-        title: q.title,
-        statement: q.statement,
-        options: Array.isArray(q.options) ? q.options : [],
-        correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
-        points: typeof q.points === 'number' ? q.points : 0,
-        difficulty: q.difficulty || 'medium'
-      }));
-
-      return res.json({
-        data: {
-          id: String(phase._id),
-          name: phase.name,
-          isBossPhase: !!phase.isBossPhase,
-          group: phase.group,
-          position: phase.position,
-          playedPhase,
-          questions: questionsResponse
-        }
-      });
-    } catch (error) {
       console.error('Error on /skillup/phases/:id:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
@@ -262,94 +93,29 @@ class SkillUpController {
    */
   async assignPhasesToCurrentUser(req, res) {
     try {
-      const userSkill = await getOrCreateUserSkillUp(req.user);
       const phasesInput = req.body && Array.isArray(req.body.phases) ? req.body.phases : null;
+      const userSkill = await SkillUpProgressService.assignPhasesToUser(req.user, phasesInput);
 
-      if (!phasesInput || phasesInput.length === 0) {
+      const data = toPlayedPhasesAssignmentDto(userSkill);
+
+      return res.json({ data });
+    } catch (error) {
+      if (error.message === 'PHASES_ARRAY_REQUIRED') {
         return res.status(400).json({ error: 'phases array is required' });
       }
 
-      const phaseIds = phasesInput
-        .map(item => item && item.phaseId)
-        .filter(id => !!id);
-
-      if (phaseIds.length === 0) {
+      if (error.message === 'AT_LEAST_ONE_PHASE_ID_REQUIRED') {
         return res.status(400).json({ error: 'At least one valid phaseId is required' });
       }
 
-      const uniquePhaseIds = Array.from(new Set(phaseIds.map(id => String(id))));
-      const phases = await Phase.find({ _id: { $in: uniquePhaseIds } }).select('_id').lean();
-      const validIdsSet = new Set(phases.map(phase => String(phase._id)));
-
-      const invalidPhaseIds = uniquePhaseIds.filter(id => !validIdsSet.has(id));
-      if (invalidPhaseIds.length > 0) {
+      if (error.message === 'INVALID_PHASE_IDS') {
+        const invalidPhaseIds = error.invalidPhaseIds || [];
         return res.status(400).json({
           error: 'Some phaseIds do not exist',
           invalidPhaseIds
         });
       }
 
-      if (!Array.isArray(userSkill.playedPhases)) {
-        userSkill.playedPhases = [];
-      }
-
-      // Preenche datas antigas se faltarem
-      userSkill.playedPhases.forEach(entry => {
-        if (!entry.datePlayed && entry.completed) {
-          entry.datePlayed = new Date();
-        }
-      });
-
-      phasesInput.forEach(item => {
-        const id = item && item.phaseId ? String(item.phaseId) : null;
-        if (!id || !validIdsSet.has(id)) {
-          return;
-        }
-
-        const existingEntry = userSkill.playedPhases.find(p => String(p.phase) === id);
-
-        const completedProvided = typeof item.completed === 'boolean';
-        const scoreProvided = typeof item.score === 'number';
-        const starsProvided = typeof item.starsEarned === 'number';
-
-        if (existingEntry) {
-          if (completedProvided) existingEntry.completed = item.completed;
-          if (scoreProvided) existingEntry.score = item.score;
-          if (starsProvided) existingEntry.starsEarned = item.starsEarned;
-          
-          if (item.datePlayed) {
-            existingEntry.datePlayed = new Date(item.datePlayed);
-          } else if (!existingEntry.datePlayed) {
-            existingEntry.datePlayed = new Date();
-          }
-        } else {
-          userSkill.playedPhases.push({
-            phase: id,
-            completed: completedProvided ? item.completed : false,
-            score: scoreProvided ? item.score : 0,
-            starsEarned: starsProvided ? item.starsEarned : 0,
-            datePlayed: item.datePlayed ? new Date(item.datePlayed) : new Date()
-          });
-        }
-      });
-
-      await userSkill.save();
-
-      const responsePlayedPhases = (userSkill.playedPhases || []).map(entry => ({
-        phaseId: String(entry.phase),
-        completed: !!entry.completed,
-        score: typeof entry.score === 'number' ? entry.score : 0,
-        starsEarned: typeof entry.starsEarned === 'number' ? entry.starsEarned : 0,
-        datePlayed: entry.datePlayed || null
-      }));
-
-      return res.json({
-        data: {
-          email: userSkill.email,
-          playedPhases: responsePlayedPhases
-        }
-      });
-    } catch (error) {
       console.error('Error on /skillup/user/me/played-phases assign:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
@@ -366,41 +132,23 @@ class SkillUpController {
   async getPlayedPhasesByEmail(req, res) {
     try {
       const email = req.params.email || (req.query && req.query.email);
+      try {
+        const userSkill = await SkillUpProgressService.getPlayedPhasesByEmail(email);
 
-      if (!email) {
-        return res.status(400).json({ error: 'email is required' });
-      }
+        const data = toPlayedPhasesHistoryDto(userSkill);
 
-      const userSkill = await UserSkillUp.findOne({ email }).populate('playedPhases.phase');
-
-      if (!userSkill) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-
-      const playedPhasesDocs = Array.isArray(userSkill.playedPhases) ? userSkill.playedPhases : [];
-
-      const playedPhases = playedPhasesDocs.map(entry => {
-        const hasPhaseDoc = entry.phase && entry.phase._id;
-        const phaseDoc = hasPhaseDoc ? entry.phase : null;
-
-        return {
-          phaseId: String(phaseDoc ? phaseDoc._id : entry.phase),
-          phaseName: phaseDoc ? phaseDoc.name : null,
-          group: phaseDoc && typeof phaseDoc.group === 'number' ? phaseDoc.group : null,
-          position: phaseDoc && typeof phaseDoc.position === 'number' ? phaseDoc.position : null,
-          completed: !!entry.completed,
-          score: typeof entry.score === 'number' ? entry.score : 0,
-          starsEarned: typeof entry.starsEarned === 'number' ? entry.starsEarned : 0,
-          datePlayed: entry.datePlayed || null
-        };
-      });
-
-      return res.json({
-        data: {
-          email: userSkill.email,
-          playedPhases
+        return res.json({ data });
+      } catch (serviceError) {
+        if (serviceError.message === 'EMAIL_REQUIRED') {
+          return res.status(400).json({ error: 'email is required' });
         }
-      });
+
+        if (serviceError.message === 'USER_NOT_FOUND') {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        throw serviceError;
+      }
     } catch (error) {
       console.error('Error on /skillup/user/played-phases:', error);
       return res.status(500).json({ error: 'Internal server error' });
@@ -416,7 +164,7 @@ class SkillUpController {
    */
   async getProducts(req, res) {
     try {
-      const products = await Product.find().lean();
+      const products = await SkillUpStoreService.listProducts();
       return res.json({ data: products });
     } catch (error) {
       console.error('Error on /skillup/products:', error);
@@ -435,67 +183,23 @@ class SkillUpController {
   async getSelectionModePhase(req, res) {
     try {
       const rawMateria = req.params.materia;
-      const materiaId = Number.parseInt(rawMateria, 10);
+      const { subjectId, category, questions } = await SkillUpPhaseService.getSelectionModePhaseData(rawMateria);
 
-      const SUBJECT_MAP = {
-        0: 'MATH',
-        1: 'LANGUAGES',
-        2: 'SCIENCE',
-        3: 'HISTORY'
-      };
+      const questionsDto = questions.map(q => toQuestionDto(q));
+      const phaseDto = toSelectionModePhaseDto(subjectId, category, questionsDto);
 
-      const category = SUBJECT_MAP[materiaId];
-
-      if (!Number.isInteger(materiaId) || !category) {
+      return res.json({
+        data: phaseDto
+      });
+    } catch (error) {
+      if (error.message === 'INVALID_SUBJECT_ID') {
         return res.status(400).json({ error: 'Invalid subject id' });
       }
 
-      const limit = 10;
-
-      const allQuestions = await Question.find({ category }).lean();
-
-      if (!allQuestions.length) {
+      if (error.message === 'NO_QUESTIONS_FOR_SUBJECT') {
         return res.status(404).json({ error: 'No questions found for this subject' });
       }
 
-      const uniqueMap = new Map();
-      allQuestions.forEach(q => {
-        const key = q.statement || `${q.title}|${q._id}`;
-        if (!uniqueMap.has(key)) {
-          uniqueMap.set(key, q);
-        }
-      });
-
-      let uniqueQuestions = Array.from(uniqueMap.values());
-
-      for (let i = uniqueQuestions.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [uniqueQuestions[i], uniqueQuestions[j]] = [uniqueQuestions[j], uniqueQuestions[i]];
-      }
-
-      const selectedQuestions = uniqueQuestions.slice(0, limit);
-
-      const questionsResponse = selectedQuestions.map(q => ({
-        id: String(q._id),
-        phaseId: q.phase ? String(q.phase) : null,
-        title: q.title,
-        statement: q.statement,
-        options: Array.isArray(q.options) ? q.options : [],
-        correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
-        points: typeof q.points === 'number' ? q.points : 0,
-        difficulty: q.difficulty || 'medium'
-      }));
-
-      return res.json({
-        data: {
-          subjectId: materiaId,
-          category,
-          isBossPhase: false,
-          totalQuestions: questionsResponse.length,
-          questions: questionsResponse
-        }
-      });
-    } catch (error) {
       console.error('Error on /skillup/selection-mode/phases/:materia:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
@@ -511,29 +215,30 @@ class SkillUpController {
    */
   async buyProduct(req, res) {
     try {
-      const userSkill = await getOrCreateUserSkillUp(req.user);
       const productId = req.body && req.body.productId;
+      try {
+        const userSkill = await SkillUpStoreService.buyProduct(req.user, productId);
 
-      if (!productId) {
-        return res.status(400).json({ error: 'productId is required' });
+        return res.json({ data: userSkill });
+      } catch (serviceError) {
+        if (serviceError.message === 'PRODUCT_ID_REQUIRED') {
+          return res.status(400).json({ error: 'productId is required' });
+        }
+
+        if (serviceError.message === 'PRODUCT_NOT_FOUND') {
+          return res.status(404).json({ error: 'Product not found' });
+        }
+
+        if (serviceError.message === 'ALREADY_OWNS_PRODUCT') {
+          return res.status(400).json({ error: 'You already own this product' });
+        }
+
+        if (serviceError.message === 'NOT_ENOUGH_COINS') {
+          return res.status(400).json({ error: 'Not enough coins' });
+        }
+
+        throw serviceError;
       }
-
-      const product = await Product.findById(productId).lean();
-
-      const alreadyOwns = userSkill.itemsOwned.some(id => id.toString() === product._id.toString());
-      if (alreadyOwns) {
-        return res.status(400).json({ error: 'You already own this product' });
-      }
-
-      if (userSkill.coins < product.price) {
-        return res.status(400).json({ error: 'Not enough coins' });
-      }
-
-      userSkill.coins -= product.price;
-      userSkill.itemsOwned.push(product._id);
-      await userSkill.save();
-
-      return res.json({ data: userSkill });
     } catch (error) {
       console.error('Error on /skillup/user/me/buy-product:', error);
       return res.status(500).json({ error: 'Internal server error' });
@@ -550,32 +255,30 @@ class SkillUpController {
    */
   async equipItem(req, res) {
     try {
-      const userSkill = await getOrCreateUserSkillUp(req.user);
       const itemId = req.body && req.body.itemId;
+      try {
+        const userSkill = await SkillUpStoreService.equipItem(req.user, itemId);
 
-      if (!itemId) {
-        return res.status(400).json({ error: 'itemId is required' });
+        return res.json({ data: userSkill });
+      } catch (serviceError) {
+        if (serviceError.message === 'ITEM_ID_REQUIRED') {
+          return res.status(400).json({ error: 'itemId is required' });
+        }
+
+        if (serviceError.message === 'PRODUCT_NOT_FOUND') {
+          return res.status(404).json({ error: 'Product not found' });
+        }
+
+        if (serviceError.message === 'ITEM_NOT_OWNED') {
+          return res.status(400).json({ error: 'You do not own this item' });
+        }
+
+        if (serviceError.message === 'ITEM_ALREADY_EQUIPPED') {
+          return res.status(400).json({ error: 'Item already equipped' });
+        }
+
+        throw serviceError;
       }
-
-      const product = await Product.findById(itemId).lean();
-
-      if (!product) {
-        return res.status(404).json({ error: 'Product not found' });
-      }
-
-      const ownsItem = userSkill.itemsOwned.some(id => id.toString() === product._id.toString());
-      if (!ownsItem) {
-        return res.status(400).json({ error: 'You do not own this item' });
-      }
-
-      const alreadyEquipped = userSkill.equippedItems.some(id => id.toString() === product._id.toString());
-      if (alreadyEquipped) {
-        return res.status(400).json({ error: 'Item already equipped' });
-       }
-      userSkill.equippedItems.push(product._id);
-      await userSkill.save();
-
-      return res.json({ data: userSkill });
     } catch (error) {
       console.error('Error on /skillup/user/me/equip-item:', error);
       return res.status(500).json({ error: 'Internal server error' });
@@ -592,64 +295,12 @@ class SkillUpController {
    */
   async getUserMe(req, res) {
     try {
-      // O 'equippedItems' vai funcionar agora porque importamos o Product.js no topo
-      let userSkill = await UserSkillUp.findOne({ email: req.user.email }).populate('equippedItems');
+      const { userSkill, equippedItemsDocs } = await SkillUpUserService.getUserSkillWithEquippedItems(req.user);
 
-      if (!userSkill) {
-        userSkill = new UserSkillUp({
-          name: req.user.name || req.user.email,
-          email: req.user.email,
-          coins: 0,
-          lifesRemaining: 5
-        });
-      }
-
-      const { modified } = applyLifeRegeneration(userSkill);
-
-      if (userSkill.isNew || modified) {
-        await userSkill.save();
-      }
-
-      const equippedItemsDocs = Array.isArray(userSkill.equippedItems) ? userSkill.equippedItems : [];
-
-      const typeMap = {
-        headwear: 'HEAD_WEAR',
-        gloves: 'GLOVES',
-        weapon: 'WEAPON',
-        footwear: 'FOOT_WEAR'
-      };
-
-      const rarityMap = {
-        common: 'COMMON',
-        rare: 'RARE',
-        legendary: 'LEGENDARY'
-      };
-
-      const equippedItems = equippedItemsDocs.map(item => ({
-        id: String(item._id),
-        name: item.name,
-        imageUrl: item.url || '',
-        price: item.price,
-        type: typeMap[item.type] || item.type,
-        rarity: rarityMap[item.rarity] || item.rarity
-      }));
+      const profileDto = toUserProfileDto(req.user, userSkill, equippedItemsDocs);
 
       return res.json({
-        data: {
-          id: String(req.user._id),
-          name: userSkill.name,
-          email: userSkill.email,
-          coins: userSkill.coins,
-          lifesRemaining: userSkill.lifesRemaining,
-          dateLostLife: userSkill.dateLostLife,
-          mathSkillPoints: userSkill.mathSkillPoints,
-          languageSkillPoints: userSkill.languageSkillPoints,
-          scienceSkillPoints: userSkill.scienceSkillPoints,
-          historySkillPoints: userSkill.historySkillPoints,
-          equippedItems,
-          createdAt: userSkill.createdAt,
-          updatedAt: userSkill.updatedAt
-        }
+        data: profileDto
       });
     } catch (error) {
       console.error('Error on /user/me:', error);
