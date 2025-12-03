@@ -1,6 +1,7 @@
 import UserSkillUp from '../models/UserSkillUp.js';
 import Phase from '../models/Phase.js';
 import Product from '../models/Product.js'; // CORREÇÃO: Necessário para o populate em getUserMe funcionar
+import Question from '../models/Question.js';
 
 // Mapa constante para definir os nomes dos grupos baseados no ID
 const GROUP_NAMES = {
@@ -11,6 +12,13 @@ const GROUP_NAMES = {
   5: 'Mundo Subterrâneo'
 };
 
+/**
+ * Busca o documento UserSkillUp associado ao usuário ou cria um novo
+ * registro com valores padrão caso ainda não exista.
+ *
+ * @param {{ email: string, name?: string }} user Usuário autenticado (req.user).
+ * @returns {Promise<any>} Documento UserSkillUp correspondente.
+ */
 async function getOrCreateUserSkillUp(user) {
   let userSkill = await UserSkillUp.findOne({ email: user.email });
 
@@ -27,6 +35,14 @@ async function getOrCreateUserSkillUp(user) {
   return userSkill;
 }
 
+/**
+ * Aplica a lógica de regeneração de vidas para o usuário, com base
+ * no tempo decorrido desde a última perda de vida.
+ *
+ * @param {any} userSkill Documento UserSkillUp do usuário.
+ * @returns {{ userSkill: any, modified: boolean }} Documento possivelmente
+ *          modificado e flag indicando se houve alteração.
+ */
 function applyLifeRegeneration(userSkill) {
   const maxLives = 5;
   const intervalMs = 10 * 60 * 1000;
@@ -77,6 +93,14 @@ function applyLifeRegeneration(userSkill) {
 
 class SkillUpController {
   
+  /**
+   * Verifica se o usuário já jogou fases suficientes para acessar
+   * o modo de recomendação de fases.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
   async canAccessRecommendationMode(req, res) {
     try {
       const userSkill = await getOrCreateUserSkillUp(req.user);
@@ -89,6 +113,14 @@ class SkillUpController {
     }
   }
 
+  /**
+   * Retorna os grupos de campanha com suas fases, incluindo dados
+   * de progresso (playedPhase) do usuário atual.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
   async getCampaignPhaseGroups(req, res) {
     try {
       const userSkill = await getOrCreateUserSkillUp(req.user);
@@ -153,6 +185,81 @@ class SkillUpController {
     }
   }
 
+  /**
+   * Retorna os detalhes de uma fase específica, incluindo informações
+   * de progresso do usuário e a lista de questões associadas.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
+  async getPhaseDetail(req, res) {
+    try {
+      const phaseId = req.params.id;
+
+      if (!phaseId) {
+        return res.status(400).json({ error: 'phaseId is required' });
+      }
+
+      const phase = await Phase.findById(phaseId).lean();
+
+      if (!phase) {
+        return res.status(404).json({ error: 'Phase not found' });
+      }
+
+      const userSkill = await getOrCreateUserSkillUp(req.user);
+      const playedEntry = Array.isArray(userSkill.playedPhases)
+        ? userSkill.playedPhases.find(p => String(p.phase) === String(phase._id))
+        : null;
+
+      const playedPhase = playedEntry
+        ? {
+            phaseId: String(phase._id),
+            won: !!playedEntry.completed,
+            starsEarned: typeof playedEntry.starsEarned === 'number' ? playedEntry.starsEarned : 0,
+            score: typeof playedEntry.score === 'number' ? playedEntry.score : 0,
+            datePlayed: playedEntry.datePlayed || null
+          }
+        : null;
+
+      const questions = await Question.find({ phase: phase._id }).sort({ _id: 1 }).lean();
+
+      const questionsResponse = questions.map(q => ({
+        id: String(q._id),
+        category: q.category,
+        title: q.title,
+        statement: q.statement,
+        options: Array.isArray(q.options) ? q.options : [],
+        correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
+        points: typeof q.points === 'number' ? q.points : 0,
+        difficulty: q.difficulty || 'medium'
+      }));
+
+      return res.json({
+        data: {
+          id: String(phase._id),
+          name: phase.name,
+          isBossPhase: !!phase.isBossPhase,
+          group: phase.group,
+          position: phase.position,
+          playedPhase,
+          questions: questionsResponse
+        }
+      });
+    } catch (error) {
+      console.error('Error on /skillup/phases/:id:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  /**
+   * Registra ou atualiza o progresso do usuário em um conjunto de fases,
+   * recebendo um array de objetos com phaseId, completed, score, etc.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
   async assignPhasesToCurrentUser(req, res) {
     try {
       const userSkill = await getOrCreateUserSkillUp(req.user);
@@ -248,6 +355,14 @@ class SkillUpController {
     }
   }
 
+  /**
+   * Retorna o histórico de fases jogadas para um e-mail específico,
+   * incluindo metadados da fase (nome, grupo, posição).
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
   async getPlayedPhasesByEmail(req, res) {
     try {
       const email = req.params.email || (req.query && req.query.email);
@@ -292,6 +407,13 @@ class SkillUpController {
     }
   }
 
+  /**
+   * Lista todos os produtos disponíveis na loja do SkillUp.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
   async getProducts(req, res) {
     try {
       const products = await Product.find().lean();
@@ -302,6 +424,91 @@ class SkillUpController {
     }
   }
 
+  /**
+   * Retorna até 10 questões únicas para o modo de seleção, com base
+   * na matéria informada (ENUM MATH, LANGUAGES, SCIENCE, HISTORY).
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
+  async getSelectionModePhase(req, res) {
+    try {
+      const rawMateria = req.params.materia;
+      const materiaId = Number.parseInt(rawMateria, 10);
+
+      const SUBJECT_MAP = {
+        0: 'MATH',
+        1: 'LANGUAGES',
+        2: 'SCIENCE',
+        3: 'HISTORY'
+      };
+
+      const category = SUBJECT_MAP[materiaId];
+
+      if (!Number.isInteger(materiaId) || !category) {
+        return res.status(400).json({ error: 'Invalid subject id' });
+      }
+
+      const limit = 10;
+
+      const allQuestions = await Question.find({ category }).lean();
+
+      if (!allQuestions.length) {
+        return res.status(404).json({ error: 'No questions found for this subject' });
+      }
+
+      const uniqueMap = new Map();
+      allQuestions.forEach(q => {
+        const key = q.statement || `${q.title}|${q._id}`;
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, q);
+        }
+      });
+
+      let uniqueQuestions = Array.from(uniqueMap.values());
+
+      for (let i = uniqueQuestions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [uniqueQuestions[i], uniqueQuestions[j]] = [uniqueQuestions[j], uniqueQuestions[i]];
+      }
+
+      const selectedQuestions = uniqueQuestions.slice(0, limit);
+
+      const questionsResponse = selectedQuestions.map(q => ({
+        id: String(q._id),
+        phaseId: q.phase ? String(q.phase) : null,
+        title: q.title,
+        statement: q.statement,
+        options: Array.isArray(q.options) ? q.options : [],
+        correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
+        points: typeof q.points === 'number' ? q.points : 0,
+        difficulty: q.difficulty || 'medium'
+      }));
+
+      return res.json({
+        data: {
+          subjectId: materiaId,
+          category,
+          isBossPhase: false,
+          totalQuestions: questionsResponse.length,
+          questions: questionsResponse
+        }
+      });
+    } catch (error) {
+      console.error('Error on /skillup/selection-mode/phases/:materia:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  /**
+   * Permite que o usuário compre um produto, debitando moedas e
+   * adicionando o item à lista de itens possuídos.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
   async buyProduct(req, res) {
     try {
       const userSkill = await getOrCreateUserSkillUp(req.user);
@@ -333,6 +540,14 @@ class SkillUpController {
     }
   }
 
+  /**
+   * Equipa um item previamente comprado pelo usuário, garantindo que
+   * ele possua o item e que ainda não esteja equipado.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
   async equipItem(req, res) {
     try {
       const userSkill = await getOrCreateUserSkillUp(req.user);
@@ -367,6 +582,14 @@ class SkillUpController {
     }
   }
 
+  /**
+   * Retorna o perfil SkillUp do usuário atual (moedas, vidas, pontos
+   * por matéria, itens equipados, datas de criação/atualização).
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
   async getUserMe(req, res) {
     try {
       // O 'equippedItems' vai funcionar agora porque importamos o Product.js no topo
@@ -434,6 +657,14 @@ class SkillUpController {
     }
   }
 
+  /**
+   * Handler de callback de autenticação do SkillUp, atualmente
+   * responsável apenas por redirecionar para /login.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {void}
+   */
   authSkillupCallback(req, res) {
     try{
       return res.redirect('/login');

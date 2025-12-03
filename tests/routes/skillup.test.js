@@ -383,3 +383,91 @@ describe('GET /api/v1/skillup/auth/callback', () => {
   });
 });
 
+describe('GET /api/v1/skillup/phases/:id', () => {
+  it('Bad Path - deve retornar 401 quando o usuário não está autenticado', async () => {
+    const getPhaseDetailSpy = jest
+      .spyOn(SkillUpController, 'getPhaseDetail')
+      .mockImplementation((req, res) => {
+        return res.status(200).json({ data: {} });
+      });
+
+    const app = createTestApp();
+
+    const response = await request(app)
+      .get('/api/v1/skillup/phases/123')
+      .expect(401);
+
+    expect(getPhaseDetailSpy).not.toHaveBeenCalled();
+    expect(response.body).toEqual({
+      error: 'Authentication required',
+      oauth_url: '/api/v1/auth/google'
+    });
+  });
+
+  it('Happy Path - deve chamar o controller quando o usuário está autenticado', async () => {
+    const mockResponse = { data: { id: '123', name: 'Fase Mock' } };
+
+    const getPhaseDetailMock = jest
+      .spyOn(SkillUpController, 'getPhaseDetail')
+      .mockImplementation((req, res) => {
+        return res.status(200).json(mockResponse);
+      });
+
+    const app = createAuthedTestApp();
+
+    const response = await request(app)
+      .get('/api/v1/skillup/phases/123')
+      .expect(200);
+
+    expect(getPhaseDetailMock).toHaveBeenCalledTimes(1);
+    expect(response.body).toEqual(mockResponse);
+  });
+});
+
+describe('GET /api/v1/skillup/selection-mode/phases/:materia', () => {
+  it('Bad Path - deve retornar 401 quando o usuário não está autenticado', async () => {
+    const selectionSpy = jest
+      .spyOn(SkillUpController, 'getSelectionModePhase')
+      .mockImplementation((req, res) => {
+        return res.status(200).json({ data: {} });
+      });
+
+    const app = createTestApp();
+
+    const response = await request(app)
+      .get('/api/v1/skillup/selection-mode/phases/0')
+      .expect(401);
+
+    expect(selectionSpy).not.toHaveBeenCalled();
+    expect(response.body).toEqual({
+      error: 'Authentication required',
+      oauth_url: '/api/v1/auth/google'
+    });
+  });
+
+  it('Happy Path - deve chamar o controller quando o usuário está autenticado', async () => {
+    const mockResponse = {
+      data: {
+        subjectId: 0,
+        category: 'MATH',
+        totalQuestions: 10,
+        questions: []
+      }
+    };
+
+    const selectionMock = jest
+      .spyOn(SkillUpController, 'getSelectionModePhase')
+      .mockImplementation((req, res) => {
+        return res.status(200).json(mockResponse);
+      });
+
+    const app = createAuthedTestApp();
+
+    const response = await request(app)
+      .get('/api/v1/skillup/selection-mode/phases/0')
+      .expect(200);
+
+    expect(selectionMock).toHaveBeenCalledTimes(1);
+    expect(response.body).toEqual(mockResponse);
+  });
+});

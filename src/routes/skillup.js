@@ -2,6 +2,12 @@ import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import SkillUpController from '../controllers/SkillUpController.js';
 
+/**
+ * Router responsável pelas rotas relacionadas ao módulo SkillUp
+ * (produtos, fases de campanha, progresso do usuário e modo seleção).
+ *
+ * @type {import('express').Router}
+ */
 const router = express.Router();
 
 router.get(
@@ -31,6 +37,18 @@ router.get(
   '/skillup/campaign/phase-groups',
   requireAuth,
   (req, res) => SkillUpController.getCampaignPhaseGroups(req, res)
+);
+
+router.get(
+  '/skillup/phases/:id',
+  requireAuth,
+  (req, res) => SkillUpController.getPhaseDetail(req, res)
+);
+
+router.get(
+  '/skillup/selection-mode/phases/:materia',
+  requireAuth,
+  (req, res) => SkillUpController.getSelectionModePhase(req, res)
 );
 
 router.post(

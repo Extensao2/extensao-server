@@ -26,6 +26,13 @@ const userSchema = new Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
+/**
+ * Hook de pré-save que atualiza o campo updatedAt sempre que o
+ * documento UserSkillUp é salvo.
+ *
+ * @this import('mongoose').Document
+ * @param {Function} next Função de continuação do Mongoose.
+ */
 userSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();
