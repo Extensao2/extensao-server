@@ -9,6 +9,7 @@ export const questionSchema = new Schema({
     enum: ['MATH', 'HISTORY', 'SCIENCE', 'LANGUAGES'],
     required: true
   },
+  topic: { type: String },
   title: { type: String, required: true },
   statement: { type: String, required: true },
   options: { type: [String], required: true },
