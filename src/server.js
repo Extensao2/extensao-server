@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import resourceRoutes from './routes/resources.js';
 import eventoRoutes from './routes/events.js';
 import questoesRoutes from './routes/questoes.js'; // <--- NOVO
+import skillUpRoutes from './routes/skillup.js';
 
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -57,7 +58,8 @@ app.use(passport.session());
 app.use('/api/v1', authRoutes);
 app.use('/api/v1', resourceRoutes);
 app.use('/api/v1', eventoRoutes);
-app.use('/api/v1', questoesRoutes); // <--- ROTAS DE QUESTÕES
+app.use('/api/v1', questoesRoutes); 
+app.use('/api/v1', skillUpRoutes);
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
