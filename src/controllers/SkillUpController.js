@@ -5,7 +5,7 @@ import SkillUpProgressService from '../services/SkillUpProgressService.js';
 import { toQuestionDto } from '../mappers/SkillUpQuestionMapper.js';
 import { toPhaseDetailDto, toSelectionModePhaseDto } from '../mappers/SkillUpPhaseMapper.js';
 import { buildCampaignGroupsDto } from '../mappers/SkillUpCampaignMapper.js';
-import { toPlayedPhasesAssignmentDto, toPlayedPhasesHistoryDto } from '../mappers/SkillUpProgressMapper.js';
+import { toPlayedPhasesAssignmentDto, toPlayedPhasesHistoryDto, toSimplePlayedPhasesDto } from '../mappers/SkillUpProgressMapper.js';
 import { toUserProfileDto } from '../mappers/SkillUpUserMapper.js';
 
 class SkillUpController {
@@ -96,9 +96,9 @@ class SkillUpController {
       const phasesInput = req.body && Array.isArray(req.body.phases) ? req.body.phases : null;
       const userSkill = await SkillUpProgressService.assignPhasesToUser(req.user, phasesInput);
 
-      const data = toPlayedPhasesAssignmentDto(userSkill);
+      const responseBody = toSimplePlayedPhasesDto(userSkill);
 
-      return res.json({ data });
+      return res.json(responseBody);
     } catch (error) {
       if (error.message === 'PHASES_ARRAY_REQUIRED') {
         return res.status(400).json({ error: 'phases array is required' });

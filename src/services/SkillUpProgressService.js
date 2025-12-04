@@ -52,6 +52,8 @@ class SkillUpProgressService {
       }
     });
 
+    let livesToLose = 0;
+
     phasesInput.forEach(item => {
       const id = item && item.phaseId ? String(item.phaseId) : null;
       if (!id || !validIdsSet.has(id)) {
@@ -65,7 +67,9 @@ class SkillUpProgressService {
       const starsProvided = typeof item.starsEarned === 'number';
 
       if (existingEntry) {
-        if (completedProvided) existingEntry.completed = item.completed;
+        if (completedProvided) {
+          existingEntry.completed = item.completed;
+        }
         if (scoreProvided) existingEntry.score = item.score;
         if (starsProvided) existingEntry.starsEarned = item.starsEarned;
 
@@ -83,7 +87,17 @@ class SkillUpProgressService {
           datePlayed: item.datePlayed ? new Date(item.datePlayed) : new Date()
         });
       }
+
+      if (completedProvided && item.completed === false) {
+        livesToLose += 1;
+      }
     });
+
+    if (livesToLose > 0) {
+      const currentLives = typeof userSkill.lifesRemaining === 'number' ? userSkill.lifesRemaining : 0;
+      userSkill.lifesRemaining = Math.max(0, currentLives - livesToLose);
+      userSkill.dateLostLife = new Date();
+    }
 
     await userSkill.save();
 

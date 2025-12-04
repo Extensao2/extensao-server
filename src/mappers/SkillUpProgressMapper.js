@@ -25,6 +25,23 @@ export function toPlayedPhasesAssignmentDto(userSkill) {
 }
 
 /**
+ * Monta um DTO simples apenas com as fases jogadas, sem metadados
+ * adicionais, para o endpoint de atribuição de fases jogadas.
+ *
+ * @param {any} userSkill Documento UserSkillUp atualizado.
+ * @returns {{ phases: Array<{ phaseId: string, completed: boolean, starsEarned: number }> }}
+ */
+export function toSimplePlayedPhasesDto(userSkill) {
+  const phases = (userSkill.playedPhases || []).map(entry => ({
+    phaseId: String(entry.phase),
+    completed: !!entry.completed,
+    starsEarned: typeof entry.starsEarned === 'number' ? entry.starsEarned : 0
+  }));
+
+  return { phases };
+}
+
+/**
  * Monta o DTO de histórico de fases jogadas para um e-mail específico.
  *
  * @param {any} userSkill Documento UserSkillUp com playedPhases populado.
