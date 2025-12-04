@@ -322,7 +322,8 @@ class SkillUpController {
 
       return res.json({
         data: {
-          lifesRemaining: userSkill.lifesRemaining
+          lifesRemaining: userSkill.lifesRemaining,
+          lifeRecoveredAt: userSkill.lifeRecoveredAt
         }
       });
     } catch (error) {

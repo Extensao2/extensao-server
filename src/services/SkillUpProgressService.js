@@ -96,7 +96,7 @@ class SkillUpProgressService {
     if (livesToLose > 0) {
       const currentLives = typeof userSkill.lifesRemaining === 'number' ? userSkill.lifesRemaining : 0;
       userSkill.lifesRemaining = Math.max(0, currentLives - livesToLose);
-      userSkill.dateLostLife = new Date();
+      userSkill.lifeLostAt = new Date();
     }
 
     await userSkill.save();

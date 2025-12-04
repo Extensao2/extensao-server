@@ -43,20 +43,20 @@ class SkillUpUserService {
     let modified = false;
 
     if (userSkill.lifesRemaining >= maxLives) {
-      if (userSkill.dateLostLife) {
-        userSkill.dateLostLife = null;
+      if (userSkill.lifeLostAt) {
+        userSkill.lifeLostAt = null;
         modified = true;
       }
       return { userSkill, modified };
     }
 
-    if (!userSkill.dateLostLife) {
-      userSkill.dateLostLife = now;
+    if (!userSkill.lifeLostAt) {
+      userSkill.lifeLostAt = now;
       modified = true;
       return { userSkill, modified };
     }
 
-    const diffMs = now - userSkill.dateLostLife;
+    const diffMs = now - userSkill.lifeLostAt;
     if (diffMs < intervalMs) {
       return { userSkill, modified };
     }
@@ -74,10 +74,10 @@ class SkillUpUserService {
     userSkill.lifesRemaining += livesToRecover;
     if (userSkill.lifesRemaining >= maxLives) {
       userSkill.lifesRemaining = maxLives;
-      userSkill.dateLostLife = null;
+      userSkill.lifeLostAt = null;
     } else {
       const remainder = diffMs % intervalMs;
-      userSkill.dateLostLife = new Date(now - remainder);
+      userSkill.lifeLostAt = new Date(now - remainder);
     }
 
     modified = true;
@@ -144,7 +144,8 @@ class SkillUpUserService {
 
     if (userSkill.lifesRemaining < maxLives) {
       userSkill.lifesRemaining += 1;
-      userSkill.dateLostLife = null;
+      userSkill.lifeLostAt = null;
+      userSkill.lifeRecoveredAt = new Date();
       await userSkill.save();
     }
 
