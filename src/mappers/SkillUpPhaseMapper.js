@@ -31,7 +31,7 @@ export function toPhaseDetailDto(phase, questions, playedPhase) {
  */
 export function toSelectionModePhaseDto(subjectId, category, questions) {
   return {
-    id: subjectId,
+    id: String(subjectId),
     name: `${category} Selection Phase`,
     isBossPhase: false,
     position: 1,

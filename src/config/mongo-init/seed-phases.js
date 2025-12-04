@@ -1,5 +1,5 @@
 /**
- * ARQUIVO: 01-seed-full.js
+ * ARQUIVO: seed-phases.js
  * DESCRIÇÃO: Script de inicialização do banco de dados MongoDB.
  * FUNCIONALIDADES:
  * 1. Limpa coleções antigas.
