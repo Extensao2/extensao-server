@@ -126,6 +126,30 @@ class SkillUpUserService {
     const playedCount = Array.isArray(userSkill.playedPhases) ? userSkill.playedPhases.length : 0;
     return playedCount >= 10;
   }
+
+  /**
+   * Incrementa em 1 a quantidade de vidas do usuário autenticado,
+   * respeitando o limite máximo de vidas.
+   *
+   * @param {{ email: string, name?: string }} user Usuário autenticado.
+   * @param {number} [maxLives=5] Limite máximo de vidas permitidas.
+   * @returns {Promise<any>} Documento UserSkillUp atualizado.
+   */
+  async addLifeToUser(user, maxLives = 5) {
+    const userSkill = await this.getOrCreateUserSkillUp(user);
+
+    if (typeof userSkill.lifesRemaining !== 'number') {
+      userSkill.lifesRemaining = 0;
+    }
+
+    if (userSkill.lifesRemaining < maxLives) {
+      userSkill.lifesRemaining += 1;
+      userSkill.dateLostLife = null;
+      await userSkill.save();
+    }
+
+    return userSkill;
+  }
 }
 
 export default new SkillUpUserService();

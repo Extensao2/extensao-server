@@ -309,6 +309,29 @@ class SkillUpController {
   }
 
   /**
+   * Incrementa em 1 a quantidade de vidas do usuário atual, respeitando
+   * o limite máximo configurado no serviço.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
+  async addLifeToCurrentUser(req, res) {
+    try {
+      const userSkill = await SkillUpUserService.addLifeToUser(req.user);
+
+      return res.json({
+        data: {
+          lifesRemaining: userSkill.lifesRemaining
+        }
+      });
+    } catch (error) {
+      console.error('Error on /skillup/user/me/add-life:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  /**
    * Handler de callback de autenticação do SkillUp, atualmente
    * responsável apenas por redirecionar para /login.
    *

@@ -59,6 +59,12 @@ router.post(
   (req, res) => SkillUpController.assignPhasesToCurrentUser(req, res)
 );
 
+router.post(
+  '/skillup/user/me/add-life',
+  requireAuth,
+  (req, res) => SkillUpController.addLifeToCurrentUser(req, res)
+);
+
 router.get(
   '/skillup/user/played-phases/:email',
   requireAuth,
