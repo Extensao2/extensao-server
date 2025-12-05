@@ -3,21 +3,26 @@ import passport from 'passport';
 
 const router = express.Router();
 
-// Google OAuth login
-router.get('/auth/google', 
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'] 
-  })
-);
+router.get('/auth/google', (req, res, next) => {
+  const { redirectTo } = req.query;
 
-// Google OAuth callback
-router.get('/auth/google/callback',
+  // Salva em sessão (ou JWT state)
+  req.session.oauthRedirect = redirectTo || '/default';
+
   passport.authenticate('google', { 
-    failureRedirect: '/login?error=oauth_failed' 
+    scope: ['profile', 'email']
+  })(req, res, next);
+});
+
+router.get('/auth/google/callback',
+  passport.authenticate('google', {
+    failureRedirect: '/login'
   }),
   (req, res) => {
-    // Successful authentication
-    res.redirect('https://extensaoads2.sj.ifsc.edu.br/api/v1/events');
+    const finalUrl = req.session.oauthRedirect || '/default';
+    delete req.session.oauthRedirect;
+
+    res.redirect(finalUrl);
   }
 );
 
