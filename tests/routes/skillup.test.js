@@ -371,18 +371,6 @@ describe('GET /api/v1/skillup/user/me', () => {
   });
 });
 
-describe('GET /api/v1/skillup/auth/callback', () => {
-  it('Happy Path - deve redirecionar para /login', async () => {
-    const app = createTestApp();
-
-    const response = await request(app)
-      .get('/api/v1/skillup/auth/callback')
-      .expect(302);
-
-    expect(response.headers.location).toBe('/login');
-  });
-});
-
 describe('GET /api/v1/skillup/phases/:id', () => {
   it('Bad Path - deve retornar 401 quando o usuário não está autenticado', async () => {
     const getPhaseDetailSpy = jest

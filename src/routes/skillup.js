@@ -1,7 +1,6 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import SkillUpController from '../controllers/SkillUpController.js';
-import passport from 'passport';
 
 
 /**
@@ -75,16 +74,6 @@ router.get(
   '/skillup/user/me',
   requireAuth,
   (req, res) => SkillUpController.getUserMe(req, res)
-);
-
-router.get('/skillup/auth/google', 
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'] 
-}))
-
-router.get(
-  '/skillup/auth/callback',
-  (req, res) => SkillUpController.authSkillupCallback(req, res)
 );
 
 export default router;
