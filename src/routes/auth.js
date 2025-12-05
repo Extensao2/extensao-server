@@ -6,11 +6,12 @@ const router = express.Router();
 router.get('/auth/google', (req, res, next) => {
   const { redirectTo } = req.query;
 
-  // Salva em sessão (ou JWT state)
-  req.session.oauthRedirect = redirectTo || '/default';
+  // Usa o state parameter do OAuth para manter o redirectTo
+  const state = redirectTo ? Buffer.from(redirectTo).toString('base64') : '';
 
   passport.authenticate('google', { 
-    scope: ['profile', 'email']
+    scope: ['profile', 'email'],
+    state: state
   })(req, res, next);
 });
 
@@ -19,8 +20,21 @@ router.get('/auth/google/callback',
     failureRedirect: '/login'
   }),
   (req, res) => {
-    const finalUrl = req.session.oauthRedirect || '/default';
-    delete req.session.oauthRedirect;
+    // Recupera o redirectTo do state parameter
+    const state = req.query.state;
+    let finalUrl = '/default';
+    
+    if (state) {
+      try {
+        const decoded = Buffer.from(state, 'base64').toString('utf-8');
+        // Valida se o resultado é uma string não vazia e parece uma URL ou path válido
+        if (decoded && (decoded.startsWith('http') || decoded.startsWith('/'))) {
+          finalUrl = decoded;
+        }
+      } catch (err) {
+        console.error('Error decoding state:', err);
+      }
+    }
 
     res.redirect(finalUrl);
   }
