@@ -17,7 +17,7 @@ router.get('/auth/google/callback',
   }),
   (req, res) => {
     // Successful authentication
-    res.redirect('https://extensaoads2.sj.ifsc.edu.br/api/v1/events');
+    res.redirect(`${process.env.FRONTEND_URL}/api/v1/events`);
   }
 );
 
