@@ -331,24 +331,6 @@ class SkillUpController {
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
-
-  /**
-   * Handler de callback de autenticação do SkillUp, atualmente
-   * responsável apenas por redirecionar para /login.
-   *
-   * @param {import('express').Request} req
-   * @param {import('express').Response} res
-   * @returns {void}
-   */
-  authSkillupCallback(req, res) {
-    try{
-      return res.redirect('/login');
-    }
-    catch(error){
-      console.error('Error on /skillup/auth/callback:', error);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-  }
 }
 
 export default new SkillUpController();
