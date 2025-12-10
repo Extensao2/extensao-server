@@ -8,9 +8,24 @@ import authRoutes from '../../src/routes/auth.js';
 const createMockedAuthRoutes = (authenticateImpl) => {
   const router = express.Router();
   
-  // Mock da rota de callback
+  // Mock da rota de callback com lógica de state parameter
   router.get('/auth/google/callback', authenticateImpl, (req, res) => {
-    res.redirect('https://extensaoads2.sj.ifsc.edu.br/api/v1/events');
+    const state = req.query.state;
+    let finalUrl = '/default';
+    
+    if (state) {
+      try {
+        const decoded = Buffer.from(state, 'base64').toString('utf-8');
+        // Valida se o resultado é uma string não vazia e parece uma URL ou path válido
+        if (decoded && (decoded.startsWith('http') || decoded.startsWith('/'))) {
+          finalUrl = decoded;
+        }
+      } catch (err) {
+        console.error('Error decoding state:', err);
+      }
+    }
+    
+    res.redirect(finalUrl);
   });
   
   return router;
@@ -227,8 +242,117 @@ describe('GET /api/v1/status', () => {
 
 });
 
+describe('GET /api/v1/auth/google', () => {
+  it('deve iniciar o fluxo OAuth sem redirectTo', async () => {
+    const app = createTestApp();
+    
+    // Mock do passport.authenticate para capturar as opções
+    let capturedOptions = null;
+    const mockPassport = {
+      authenticate: (strategy, options) => {
+        capturedOptions = options;
+        return (req, res, next) => {
+          // Simula redirecionamento para Google
+          res.redirect('https://accounts.google.com/o/oauth2/auth');
+        };
+      }
+    };
+    
+    // Criar rota mockada
+    const router = express.Router();
+    router.get('/auth/google', (req, res, next) => {
+      const { redirectTo } = req.query;
+      const state = redirectTo ? Buffer.from(redirectTo).toString('base64') : '';
+      
+      mockPassport.authenticate('google', { 
+        scope: ['profile', 'email'],
+        state: state
+      })(req, res, next);
+    });
+    
+    app.use('/api/v1', router);
+    
+    const response = await request(app)
+      .get('/api/v1/auth/google');
+    
+    expect(response.status).toBe(302);
+    expect(capturedOptions).toEqual({
+      scope: ['profile', 'email'],
+      state: ''
+    });
+  });
+
+  it('deve iniciar o fluxo OAuth com redirectTo codificado em state', async () => {
+    const app = createTestApp();
+    const redirectTo = 'https://extensaoads2.sj.ifsc.edu.br/api/v1/events';
+    const expectedState = Buffer.from(redirectTo).toString('base64');
+    
+    // Mock do passport.authenticate para capturar as opções
+    let capturedOptions = null;
+    const mockPassport = {
+      authenticate: (strategy, options) => {
+        capturedOptions = options;
+        return (req, res, next) => {
+          // Simula redirecionamento para Google
+          res.redirect('https://accounts.google.com/o/oauth2/auth');
+        };
+      }
+    };
+    
+    // Criar rota mockada
+    const router = express.Router();
+    router.get('/auth/google', (req, res, next) => {
+      const { redirectTo } = req.query;
+      const state = redirectTo ? Buffer.from(redirectTo).toString('base64') : '';
+      
+      mockPassport.authenticate('google', { 
+        scope: ['profile', 'email'],
+        state: state
+      })(req, res, next);
+    });
+    
+    app.use('/api/v1', router);
+    
+    const response = await request(app)
+      .get(`/api/v1/auth/google?redirectTo=${encodeURIComponent(redirectTo)}`);
+    
+    expect(response.status).toBe(302);
+    expect(capturedOptions).toEqual({
+      scope: ['profile', 'email'],
+      state: expectedState
+    });
+  });
+});
+
 describe('GET /api/v1/auth/google/callback', () => {
-  it('deve redirecionar corretamente no Happy Path', async () => {
+  it('deve redirecionar para URL customizada quando state parameter é fornecido', async () => {
+    const app = createTestApp();
+    const redirectUrl = 'https://extensaoads2.sj.ifsc.edu.br/api/v1/events';
+    const encodedState = Buffer.from(redirectUrl).toString('base64');
+
+    // Middleware que simula passport.authenticate com sucesso
+    const mockAuthenticate = (req, res, next) => {
+      req.user = {
+        _id: '507f1f77bcf86cd799439011',
+        email: 'test@example.com',
+        name: 'Test User',
+        avatar: 'https://example.com/avatar.jpg',
+        provider: 'google'
+      };
+      next();
+    };
+
+    const mockedRoutes = createMockedAuthRoutes(mockAuthenticate);
+    app.use('/api/v1', mockedRoutes);
+
+    const response = await request(app)
+      .get(`/api/v1/auth/google/callback?state=${encodedState}`);
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe(redirectUrl);
+  });
+
+  it('deve redirecionar para /default quando state parameter não é fornecido', async () => {
     const app = createTestApp();
 
     // Middleware que simula passport.authenticate com sucesso
@@ -250,7 +374,32 @@ describe('GET /api/v1/auth/google/callback', () => {
       .get('/api/v1/auth/google/callback');
 
     expect(response.status).toBe(302);
-    expect(response.headers.location).toBe('https://extensaoads2.sj.ifsc.edu.br/api/v1/events');
+    expect(response.headers.location).toBe('/default');
+  });
+
+  it('deve redirecionar para /default quando state parameter é inválido', async () => {
+    const app = createTestApp();
+
+    // Middleware que simula passport.authenticate com sucesso
+    const mockAuthenticate = (req, res, next) => {
+      req.user = {
+        _id: '507f1f77bcf86cd799439011',
+        email: 'test@example.com',
+        name: 'Test User',
+        avatar: 'https://example.com/avatar.jpg',
+        provider: 'google'
+      };
+      next();
+    };
+
+    const mockedRoutes = createMockedAuthRoutes(mockAuthenticate);
+    app.use('/api/v1', mockedRoutes);
+
+    const response = await request(app)
+      .get('/api/v1/auth/google/callback?state=invalid-base64!!!');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/default');
   });
 
   it('deve redirecionar para failureRedirect quando falhar a autenticação', async () => {

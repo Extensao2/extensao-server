@@ -3,27 +3,53 @@ import passport from 'passport';
 
 const router = express.Router();
 
-// Google OAuth login
-router.get('/auth/google', 
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'] 
-  })
-);
+router.get('/auth/google', (req, res, next) => {
+  const rawRedirectTo = req.query.redirectTo;
+  const redirectTo = Array.isArray(rawRedirectTo) ? rawRedirectTo[0] : rawRedirectTo;
 
-// Google OAuth callback
+  let validatedRedirect = '';
+  if (typeof redirectTo === 'string' && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+    validatedRedirect = redirectTo;
+  }
+
+  const state = validatedRedirect
+    ? Buffer.from(validatedRedirect).toString('base64')
+    : '';
+
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    state: state
+  })(req, res, next);
+});
+
 router.get('/auth/google/callback',
-  passport.authenticate('google', { 
-    failureRedirect: '/login?error=oauth_failed' 
+  passport.authenticate('google', {
+    failureRedirect: '/login'
   }),
   (req, res) => {
-    // Successful authentication
-    res.redirect('https://extensaoads2.sj.ifsc.edu.br/api/v1/events');
+    // Recupera o redirectTo do state parameter
+    const state = req.query.state;
+    let finalUrl = '/default';
+
+    if (state) {
+      try {
+        const decoded = Buffer.from(state, 'base64').toString('utf-8');
+        // Valida se o resultado é um path relativo seguro (não permite URLs externas)
+        if (decoded && decoded.startsWith('/') && !decoded.startsWith('//')) {
+          finalUrl = decoded;
+        }
+      } catch (err) {
+        console.error('Error decoding state:', err);
+      }
+    }
+
+    res.redirect(finalUrl);
   }
 );
 
 // Traditional login endpoint (for compatibility)
 router.post('/login', (req, res) => {
-  res.status(400).json({ 
+  res.status(400).json({
     error: 'Traditional login disabled. Please use Google OAuth.',
     oauth_url: '/api/v1/auth/google'
   });
@@ -50,12 +76,12 @@ router.post('/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Could not log out' });
     }
-    
+
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ error: 'Could not destroy session' });
       }
-      
+
       res.clearCookie('session_id');
       res.status(200).json({ message: 'Logout successful' });
     });
