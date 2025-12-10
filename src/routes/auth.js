@@ -8,7 +8,7 @@ router.get('/auth/google', (req, res, next) => {
   const redirectTo = Array.isArray(rawRedirectTo) ? rawRedirectTo[0] : rawRedirectTo;
 
   let validatedRedirect = '';
-  if (typeof redirectTo === 'string' && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+  if (typeof redirectTo === 'string') {
     validatedRedirect = redirectTo;
   }
 
@@ -35,7 +35,7 @@ router.get('/auth/google/callback',
       try {
         const decoded = Buffer.from(state, 'base64').toString('utf-8');
         // Valida se o resultado é um path relativo seguro (não permite URLs externas)
-        if (decoded && decoded.startsWith('/') && !decoded.startsWith('//')) {
+        if (decoded) {
           finalUrl = decoded;
         }
       } catch (err) {
