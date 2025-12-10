@@ -6,8 +6,14 @@ const router = express.Router();
 router.get('/auth/google', (req, res, next) => {
   const { redirectTo } = req.query;
 
-  // Usa o state parameter do OAuth para manter o redirectTo
-  const state = redirectTo ? Buffer.from(redirectTo).toString('base64') : '';
+  let validatedRedirect = '';
+  if (redirectTo) {
+    if (redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+      validatedRedirect = redirectTo;
+    }
+  }
+
+  const state = validatedRedirect ? Buffer.from(validatedRedirect).toString('base64') : '';
 
   passport.authenticate('google', { 
     scope: ['profile', 'email'],
@@ -27,10 +33,10 @@ router.get('/auth/google/callback',
     if (state) {
       try {
         const decoded = Buffer.from(state, 'base64').toString('utf-8');
-        // Valida se o resultado é uma string não vazia e parece uma URL ou path válido
-        if (decoded && (decoded.startsWith('http') || decoded.startsWith('/'))) {
-          finalUrl = decoded;
-        }
+        // Valida se o resultado é um path relativo seguro (não permite URLs externas)
+        if (decoded && decoded.startsWith('/') && !decoded.startsWith('//')) {
+           finalUrl = decoded;
+         }
       } catch (err) {
         console.error('Error decoding state:', err);
       }
