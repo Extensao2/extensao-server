@@ -53,7 +53,6 @@ export function buildCampaignGroupsDto(allPhases, playedPhasesDocs) {
           phaseId: String(phase._id),
           won: !!playedData.completed,
           starsEarned: typeof playedData.starsEarned === 'number' ? playedData.starsEarned : 0,
-          score: typeof playedData.score === 'number' ? playedData.score : 0,
           datePlayed: playedData.datePlayed || null
         }
       : null;

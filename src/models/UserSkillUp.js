@@ -18,7 +18,6 @@ const userSchema = new Schema({
   playedPhases: [{
     phase: { type: Schema.Types.ObjectId, ref: 'Phase' },
     completed: { type: Boolean, default: false },
-    score: { type: Number, default: 0 },
     starsEarned: { type: Number, default: 0 },
     datePlayed: { type: Date }
   }],

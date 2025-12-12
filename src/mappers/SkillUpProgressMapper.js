@@ -13,7 +13,6 @@ export function toPlayedPhasesAssignmentDto(userSkill) {
   const playedPhases = (userSkill.playedPhases || []).map(entry => ({
     phaseId: String(entry.phase),
     completed: !!entry.completed,
-    score: typeof entry.score === 'number' ? entry.score : 0,
     starsEarned: typeof entry.starsEarned === 'number' ? entry.starsEarned : 0,
     datePlayed: entry.datePlayed || null
   }));
@@ -60,7 +59,6 @@ export function toPlayedPhasesHistoryDto(userSkill) {
       group: phaseDoc && typeof phaseDoc.group === 'number' ? phaseDoc.group : null,
       position: phaseDoc && typeof phaseDoc.position === 'number' ? phaseDoc.position : null,
       completed: !!entry.completed,
-      score: typeof entry.score === 'number' ? entry.score : 0,
       starsEarned: typeof entry.starsEarned === 'number' ? entry.starsEarned : 0,
       datePlayed: entry.datePlayed || null
     };

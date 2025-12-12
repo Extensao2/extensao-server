@@ -37,7 +37,6 @@ class SkillUpPhaseService {
           phaseId: String(phase._id),
           won: !!playedEntry.completed,
           starsEarned: typeof playedEntry.starsEarned === 'number' ? playedEntry.starsEarned : 0,
-          score: typeof playedEntry.score === 'number' ? playedEntry.score : 0,
           datePlayed: playedEntry.datePlayed || null
         }
       : null;

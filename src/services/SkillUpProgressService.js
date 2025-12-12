@@ -63,14 +63,12 @@ class SkillUpProgressService {
       const existingEntry = userSkill.playedPhases.find(p => String(p.phase) === id);
 
       const completedProvided = typeof item.completed === 'boolean';
-      const scoreProvided = typeof item.score === 'number';
       const starsProvided = typeof item.starsEarned === 'number';
 
       if (existingEntry) {
         if (completedProvided) {
           existingEntry.completed = item.completed;
         }
-        if (scoreProvided) existingEntry.score = item.score;
         if (starsProvided) existingEntry.starsEarned = item.starsEarned;
 
         if (item.datePlayed) {
@@ -82,7 +80,6 @@ class SkillUpProgressService {
         userSkill.playedPhases.push({
           phase: id,
           completed: completedProvided ? item.completed : false,
-          score: scoreProvided ? item.score : 0,
           starsEarned: starsProvided ? item.starsEarned : 0,
           datePlayed: item.datePlayed ? new Date(item.datePlayed) : new Date()
         });

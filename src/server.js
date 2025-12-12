@@ -53,7 +53,18 @@ app.use(session({
 // Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
-
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    if (!req.user) {
+      req.user = {
+        _id: '000000000000000000000000', // opcional, só pra manter formato
+        email: 'mock.user@example.com',
+        name: 'Usuário Mock',
+      };
+    }
+    next();
+  });
+}
 // Routes
 app.use('/api/v1', authRoutes);
 app.use('/api/v1', resourceRoutes);
