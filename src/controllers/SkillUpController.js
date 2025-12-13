@@ -94,9 +94,14 @@ class SkillUpController {
   async assignPhasesToCurrentUser(req, res) {
     try {
       const phasesInput = req.body && Array.isArray(req.body.phases) ? req.body.phases : null;
-      const userSkill = await SkillUpProgressService.assignPhasesToUser(req.user, phasesInput);
+      const { userSkill, coinsEarned, itemEarned } = await SkillUpProgressService.assignPhasesToUser(req.user, phasesInput);
 
-      const responseBody = toSimplePlayedPhasesDto(userSkill);
+      const responseBody = {
+        data: {
+          coinsEarned,
+          itemEarned
+        }
+      };
 
       return res.json(responseBody);
     } catch (error) {
@@ -183,13 +188,13 @@ class SkillUpController {
   async getSelectionModePhase(req, res) {
     try {
       const rawMateria = req.params.materia;
-      const { subjectId, category, questions } = await SkillUpPhaseService.getSelectionModePhaseData(rawMateria);
-
-      const questionsDto = questions.map(q => toQuestionDto(q));
-      const phaseDto = toSelectionModePhaseDto(subjectId, category, questionsDto);
+      const { subjectId, category, phaseId } = await SkillUpPhaseService.getSelectionModePhaseData(req.user, rawMateria);
 
       return res.json({
-        data: phaseDto
+        data: {
+          subjectId,
+          phaseId
+        }
       });
     } catch (error) {
       if (error.message === 'INVALID_SUBJECT_ID') {
