@@ -1,5 +1,6 @@
 import Phase from '../models/Phase.js';
 import UserSkillUp from '../models/UserSkillUp.js';
+import Product from '../models/Product.js';
 import SkillUpUserService from './SkillUpUserService.js';
 
 /**
@@ -12,7 +13,7 @@ class SkillUpProgressService {
    *
    * @param {{ email: string, name?: string }} user Usuário autenticado.
    * @param {Array<any> | null} phasesInput Array vindo do corpo da requisição.
-   * @returns {Promise<any>} Documento UserSkillUp atualizado.
+   * @returns {Promise<{ userSkill: any, coinsEarned: number, itemEarned: any | null }>}
    */
   async assignPhasesToUser(user, phasesInput) {
     if (!phasesInput || !Array.isArray(phasesInput) || phasesInput.length === 0) {
@@ -30,8 +31,9 @@ class SkillUpProgressService {
     }
 
     const uniquePhaseIds = Array.from(new Set(phaseIds.map(id => String(id))));
-    const phases = await Phase.find({ _id: { $in: uniquePhaseIds } }).select('_id').lean();
+    const phases = await Phase.find({ _id: { $in: uniquePhaseIds } }).select('_id isBossPhase').lean();
     const validIdsSet = new Set(phases.map(phase => String(phase._id)));
+    const phasesById = new Map(phases.map(phase => [String(phase._id), phase]));
 
     const invalidPhaseIds = uniquePhaseIds.filter(id => !validIdsSet.has(id));
     if (invalidPhaseIds.length > 0) {
@@ -53,6 +55,8 @@ class SkillUpProgressService {
     });
 
     let livesToLose = 0;
+    let totalCoinsEarned = 0;
+    let bossVictoryHappened = false;
 
     phasesInput.forEach(item => {
       const id = item && item.phaseId ? String(item.phaseId) : null;
@@ -64,6 +68,14 @@ class SkillUpProgressService {
 
       const completedProvided = typeof item.completed === 'boolean';
       const starsProvided = typeof item.starsEarned === 'number';
+
+      const phaseDoc = phasesById.get(id);
+      const isBossPhase = !!(phaseDoc && phaseDoc.isBossPhase);
+
+      const previousCompleted = existingEntry ? !!existingEntry.completed : false;
+      const previousStars = existingEntry && typeof existingEntry.starsEarned === 'number'
+        ? existingEntry.starsEarned
+        : 0;
 
       if (existingEntry) {
         if (completedProvided) {
@@ -85,6 +97,27 @@ class SkillUpProgressService {
         });
       }
 
+      const currentEntry = existingEntry || userSkill.playedPhases.find(p => String(p.phase) === id);
+      const nowCompleted = currentEntry ? !!currentEntry.completed : false;
+      const nowStars = currentEntry && typeof currentEntry.starsEarned === 'number'
+        ? currentEntry.starsEarned
+        : 0;
+
+      // Ganha coins em qualquer fase (normal ou boss) ao completar pela primeira vez
+      if (!previousCompleted && nowCompleted) {
+        let coinsForThisPhase = 0;
+        if (nowStars === 3) coinsForThisPhase = 300;
+        else if (nowStars === 2) coinsForThisPhase = 200;
+        else if (nowStars === 1) coinsForThisPhase = 100;
+
+        totalCoinsEarned += coinsForThisPhase;
+
+        // Marca vitória em boss apenas para controle de drop de item
+        if (isBossPhase) {
+          bossVictoryHappened = true;
+        }
+      }
+
       if (completedProvided && item.completed === false) {
         livesToLose += 1;
       }
@@ -96,9 +129,37 @@ class SkillUpProgressService {
       userSkill.lifeLostAt = new Date();
     }
 
+    if (totalCoinsEarned > 0) {
+      const currentCoins = typeof userSkill.coins === 'number' ? userSkill.coins : 0;
+      userSkill.coins = currentCoins + totalCoinsEarned;
+    }
+
+    let itemEarned = null;
+
+    if (bossVictoryHappened) {
+      const products = await Product.find().lean();
+
+      if (Array.isArray(products) && products.length > 0) {
+        const randomIndex = Math.floor(Math.random() * products.length);
+        const randomProduct = products[randomIndex];
+
+        const alreadyOwned = userSkill.itemsOwned.some(id => id.toString() === randomProduct._id.toString());
+
+        if (!alreadyOwned) {
+          userSkill.itemsOwned.push(randomProduct._id);
+        }
+
+        itemEarned = randomProduct;
+      }
+    }
+
     await userSkill.save();
 
-    return userSkill;
+    return {
+      userSkill,
+      coinsEarned: totalCoinsEarned,
+      itemEarned
+    };
   }
 
   /**

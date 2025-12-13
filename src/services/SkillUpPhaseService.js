@@ -63,13 +63,13 @@ class SkillUpPhaseService {
   }
 
   /**
-   * Busca as questões únicas para o modo seleção, aplicando as
-   * regras de negócio de categoria, limite e embaralhamento.
+   * Retorna os dados necessários para o modo seleção, escolhendo
+   * uma fase aleatória associada à matéria informada.
    *
    * @param {string} rawMateria Valor vindo da rota (req.params.materia).
-   * @returns {Promise<{ subjectId: number, category: string, questions: any[] }>}
+   * @returns {Promise<{ subjectId: number, category: string, phaseId: string }>}
    */
-  async getSelectionModePhaseData(rawMateria) {
+  async getSelectionModePhaseData(user, rawMateria) {
     const materiaId = Number.parseInt(rawMateria, 10);
 
     const SUBJECT_MAP = {
@@ -85,35 +85,35 @@ class SkillUpPhaseService {
       throw new Error('INVALID_SUBJECT_ID');
     }
 
-    const limit = 10;
-
     const allQuestions = await Question.find({ category }).lean();
 
     if (!allQuestions.length) {
       throw new Error('NO_QUESTIONS_FOR_SUBJECT');
     }
 
-    const uniqueMap = new Map();
-    allQuestions.forEach(q => {
-      const key = q.statement || `${q.title}|${q._id}`;
-      if (!uniqueMap.has(key)) {
-        uniqueMap.set(key, q);
-      }
-    });
+    const allPhaseIdsSet = new Set(allQuestions.map(q => String(q.phase)));
+    const allPhaseIds = Array.from(allPhaseIdsSet);
 
-    let uniqueQuestions = Array.from(uniqueMap.values());
+    const userSkill = await SkillUpUserService.getOrCreateUserSkillUp(user);
 
-    for (let i = uniqueQuestions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [uniqueQuestions[i], uniqueQuestions[j]] = [uniqueQuestions[j], uniqueQuestions[i]];
+    const playedPhasesDocs = Array.isArray(userSkill.playedPhases) ? userSkill.playedPhases : [];
+    const playedPhaseIdsSet = new Set(playedPhasesDocs.map(p => String(p.phase)));
+
+    const notPlayedPhaseIds = allPhaseIds.filter(id => !playedPhaseIdsSet.has(id));
+
+    const candidates = notPlayedPhaseIds.length > 0 ? notPlayedPhaseIds : allPhaseIds;
+
+    const randomIndex = Math.floor(Math.random() * candidates.length);
+    const chosenPhaseId = candidates[randomIndex];
+
+    if (!chosenPhaseId) {
+      throw new Error('NO_QUESTIONS_FOR_SUBJECT');
     }
-
-    const selectedQuestions = uniqueQuestions.slice(0, limit);
 
     return {
       subjectId: materiaId,
       category,
-      questions: selectedQuestions
+      phaseId: chosenPhaseId
     };
   }
 }
