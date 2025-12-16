@@ -14,7 +14,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.warn('Não autenticado - redirecionando para login');
+      console.warn('Não autenticado - usuário precisa fazer login');
     }
     return Promise.reject(error);
   }
