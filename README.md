@@ -124,7 +124,22 @@ src/
 ├── models/          # Modelos do MongoDB
 ├── routes/          # Rotas da API
 └── server.js        # Arquivo principal
+
+example-frontend/    # Aplicação frontend de exemplo
 ```
+
+## 💻 Exemplo de Frontend
+
+Uma aplicação frontend mínima está disponível em `example-frontend/` demonstrando como integrar a autenticação OAuth com esta API.
+
+**Para usar o exemplo:**
+
+```bash
+cd example-frontend
+npm install
+npm run dev
+```
+
 
 ## ✅ Testes
 
