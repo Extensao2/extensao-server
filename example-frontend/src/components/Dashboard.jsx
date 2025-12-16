@@ -24,10 +24,12 @@ export function Dashboard({ user, onLogout }) {
     <div>
       <h1>Bem-vindo!</h1>
       
-      <div>
-        <h2>{user.name}</h2>
-        <p>{user.email}</p>
-      </div>
+      {user && (
+        <div>
+          <h2>{user.name}</h2>
+          <p>{user.email}</p>
+        </div>
+      )}
 
       <div>
         <button 
