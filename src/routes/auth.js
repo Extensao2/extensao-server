@@ -29,7 +29,7 @@ router.get('/auth/google/callback',
   (req, res) => {
     // Recupera o redirectTo do state parameter
     const state = req.query.state;
-    let finalUrl = '/default';
+    let finalUrl = process.env.OAUTH_SUCCESS_REDIRECT_URL || '/default';
 
     if (state) {
       try {
