@@ -86,6 +86,37 @@ class SkillUpStoreService {
 
     return userSkill;
   }
+
+  /**
+   * Desequipa um item atualmente equipado pelo usuário.
+   *
+   * @param {{ email: string, name?: string }} user Usuário autenticado.
+   * @param {string} itemId ID do produto a desequipar.
+   * @returns {Promise<any>} Documento UserSkillUp atualizado.
+   */
+  async unequipItem(user, itemId) {
+    if (!itemId) {
+      throw new Error('ITEM_ID_REQUIRED');
+    }
+
+    const userSkill = await SkillUpUserService.getOrCreateUserSkillUp(user);
+
+    const product = await Product.findById(itemId).lean();
+
+    if (!product) {
+      throw new Error('PRODUCT_NOT_FOUND');
+    }
+
+    const isEquippedIndex = userSkill.equippedItems.findIndex(id => id.toString() === product._id.toString());
+    if (isEquippedIndex === -1) {
+      throw new Error('ITEM_NOT_EQUIPPED');
+    }
+
+    userSkill.equippedItems.splice(isEquippedIndex, 1);
+    await userSkill.save();
+
+    return userSkill;
+  }
 }
 
 export default new SkillUpStoreService();

@@ -23,6 +23,12 @@ router.post(
 );
 
 router.post(
+  '/skillup/user/me/unequip-item',
+  requireAuth,
+  (req, res) => SkillUpController.unequipItem(req, res)
+);
+
+router.post(
   '/skillup/user/me/buy-product',
   requireAuth,
   (req, res) => SkillUpController.buyProduct(req, res)
@@ -32,6 +38,12 @@ router.get(
   '/skillup/game-mode/can-access-recommendation-mode',
   requireAuth,
   (req, res) => SkillUpController.canAccessRecommendationMode(req, res)
+);
+
+router.get(
+  '/skillup/recommendation-mode/phases',
+  requireAuth,
+  (req, res) => SkillUpController.getRecommendationModePhases(req, res)
 );
 
 router.get(
@@ -74,6 +86,18 @@ router.get(
   '/skillup/user/me',
   requireAuth,
   (req, res) => SkillUpController.getUserMe(req, res)
+);
+
+router.get(
+  '/skillup/user/me/owned-items',
+  requireAuth,
+  (req, res) => SkillUpController.getOwnedItems(req, res)
+);
+
+router.get(
+  '/skillup/user/me/equipped-items',
+  requireAuth,
+  (req, res) => SkillUpController.getEquippedItems(req, res)
 );
 
 export default router;

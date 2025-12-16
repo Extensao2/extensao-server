@@ -77,6 +77,56 @@ describe('GET /api/v1/skillup/products', () => {
   });
 });
 
+describe('GET /api/v1/skillup/recommendation-mode/phases', () => {
+  it('Bad Path - deve retornar 401 quando o usuário não está autenticado', async () => {
+    const recommendationSpy = jest
+      .spyOn(SkillUpController, 'getRecommendationModePhases')
+      .mockImplementation((req, res) => {
+        return res.status(200).json({ data: [] });
+      });
+
+    const app = createTestApp();
+
+    const response = await request(app)
+      .get('/api/v1/skillup/recommendation-mode/phases')
+      .expect(401);
+
+    expect(recommendationSpy).not.toHaveBeenCalled();
+    expect(response.body).toEqual({
+      error: 'Authentication required',
+      oauth_url: '/api/v1/auth/google'
+    });
+  });
+
+  it('Happy Path - deve chamar o controller quando o usuário está autenticado', async () => {
+    const mockResponse = {
+      data: [
+        {
+          phaseId: '123',
+          subject: 'MATH',
+          topic: 'Frações',
+          createdAt: new Date().toISOString()
+        }
+      ]
+    };
+
+    const recommendationMock = jest
+      .spyOn(SkillUpController, 'getRecommendationModePhases')
+      .mockImplementation((req, res) => {
+        return res.status(200).json(mockResponse);
+      });
+
+    const app = createAuthedTestApp();
+
+    const response = await request(app)
+      .get('/api/v1/skillup/recommendation-mode/phases')
+      .expect(200);
+
+    expect(recommendationMock).toHaveBeenCalledTimes(1);
+    expect(response.body).toEqual(mockResponse);
+  });
+});
+
 
 describe('POST /api/v1/skillup/user/me/buy-product', () => {
   it('Bad Path - deve retornar 401 quando o usuário não está autenticado', async () => {

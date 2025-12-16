@@ -6,7 +6,7 @@ import { toQuestionDto } from '../mappers/SkillUpQuestionMapper.js';
 import { toPhaseDetailDto, toSelectionModePhaseDto } from '../mappers/SkillUpPhaseMapper.js';
 import { buildCampaignGroupsDto } from '../mappers/SkillUpCampaignMapper.js';
 import { toPlayedPhasesAssignmentDto, toPlayedPhasesHistoryDto, toSimplePlayedPhasesDto } from '../mappers/SkillUpProgressMapper.js';
-import { toUserProfileDto } from '../mappers/SkillUpUserMapper.js';
+import { toUserProfileDto, toEquippedItemDto } from '../mappers/SkillUpUserMapper.js';
 
 class SkillUpController {
   
@@ -25,6 +25,78 @@ class SkillUpController {
       return res.json({ data: { canAccess } });
     } catch (error) {
       console.error('Error on /game-mode/can-access-recommendation-mode:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+  }
+
+  async unequipItem(req, res) {
+    try {
+      const itemId = req.body && req.body.itemId;
+      try {
+        const userSkill = await SkillUpStoreService.unequipItem(req.user, itemId);
+
+        return res.json({ data: userSkill });
+      } catch (serviceError) {
+        if (serviceError.message === 'ITEM_ID_REQUIRED') {
+          return res.status(400).json({ error: 'itemId is required' });
+        }
+
+        if (serviceError.message === 'PRODUCT_NOT_FOUND') {
+          return res.status(404).json({ error: 'Product not found' });
+        }
+
+        if (serviceError.message === 'ITEM_NOT_EQUIPPED') {
+          return res.status(400).json({ error: 'Item not equipped' });
+        }
+
+        throw serviceError;
+      }
+    } catch (error) {
+      console.error('Error on /skillup/user/me/unequip-item:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async getOwnedItems(req, res) {
+    try {
+      const items = await SkillUpUserService.getUserOwnedItems(req.user);
+      const data = (items || []).map(item => toEquippedItemDto(item));
+      return res.json({ data });
+    } catch (error) {
+      console.error('Error on /skillup/user/me/owned-items:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async getEquippedItems(req, res) {
+    try {
+      const { userSkill, equippedItemsDocs } = await SkillUpUserService.getUserSkillWithEquippedItems(req.user);
+      const data = (equippedItemsDocs || []).map(item => toEquippedItemDto(item));
+      return res.json({ data });
+    } catch (error) {
+      console.error('Error on /skillup/user/me/equipped-items:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  /**
+   * Retorna as fases para o modo de recomendação, no formato esperado
+   * pelo front-end: phaseId, subject, topic e createdAt.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   * @returns {Promise<void>}
+   */
+  async getRecommendationModePhases(req, res) {
+    try {
+      const phases = await SkillUpPhaseService.getRecommendationModePhasesData(req.user);
+
+      return res.json({
+        data: phases
+      });
+    } catch (error) {
+      console.error('Error on /recommendation-mode/phases:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }

@@ -62,6 +62,53 @@ class SkillUpPhaseService {
     return { allPhases, playedPhasesDocs };
   }
 
+  async getRecommendationModePhasesData(user) {
+  const userSkill = await SkillUpUserService.getOrCreateUserSkillUp(user);
+
+  const playedPhases = Array.isArray(userSkill.playedPhases)
+    ? userSkill.playedPhases.filter(p => p && p.phase)
+    : [];
+
+  if (!playedPhases.length) {
+    return [];
+  }
+
+  const phaseIds = playedPhases.map(p => p.phase);
+
+  const questions = await Question.find({ phase: { $in: phaseIds } }).lean();
+
+  const phaseMetaMap = new Map();
+  for (const q of questions) {
+    const phaseIdStr = String(q.phase);
+    if (!phaseMetaMap.has(phaseIdStr)) {
+      phaseMetaMap.set(phaseIdStr, {
+        subject: typeof q.category === 'string' ? q.category : null,
+        topic: typeof q.topic === 'string' ? q.topic : null
+      });
+    }
+  }
+
+  const recommendations = playedPhases
+    .map(p => {
+      const phaseIdStr = String(p.phase);
+      const meta = phaseMetaMap.get(phaseIdStr) || { subject: null, topic: null };
+
+      return {
+        phaseId: phaseIdStr,
+        subject: meta.subject,
+        topic: meta.topic,
+        createdAt: p.datePlayed || null
+      };
+    })
+    .sort((a, b) => {
+      const aTime = a.createdAt ? a.createdAt.getTime() : 0;
+      const bTime = b.createdAt ? b.createdAt.getTime() : 0;
+      return bTime - aTime;
+    });
+
+  return recommendations;
+} 
+
   /**
    * Retorna os dados necessários para o modo seleção, escolhendo
    * uma fase aleatória associada à matéria informada.

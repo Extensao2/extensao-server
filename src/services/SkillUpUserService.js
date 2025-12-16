@@ -114,6 +114,13 @@ class SkillUpUserService {
     return { userSkill, equippedItemsDocs };
   }
 
+  async getUserOwnedItems(user) {
+    const userSkill = await this.getOrCreateUserSkillUp(user);
+    await userSkill.populate('itemsOwned');
+    const itemsOwnedDocs = Array.isArray(userSkill.itemsOwned) ? userSkill.itemsOwned : [];
+    return itemsOwnedDocs;
+  }
+
   /**
    * Verifica se o usuário pode acessar o modo de recomendação com base
    * na quantidade de fases jogadas.
