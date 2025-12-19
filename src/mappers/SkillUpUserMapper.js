@@ -2,13 +2,6 @@
  * Mappers para o perfil SkillUp do usuário.
  */
 
-const TYPE_MAP = {
-  headwear: 'HEAD_WEAR',
-  gloves: 'GLOVES',
-  weapon: 'WEAPON',
-  footwear: 'FOOT_WEAR'
-};
-
 const RARITY_MAP = {
   common: 'COMMON',
   rare: 'RARE',
@@ -27,7 +20,7 @@ export function toEquippedItemDto(item) {
     name: item.name,
     imageUrl: item.url || '',
     price: item.price,
-    type: TYPE_MAP[item.type] || item.type,
+    type: item.type,
     rarity: RARITY_MAP[item.rarity] || item.rarity
   };
 }
