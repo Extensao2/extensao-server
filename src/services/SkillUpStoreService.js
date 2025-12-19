@@ -6,11 +6,18 @@ import SkillUpUserService from './SkillUpUserService.js';
  */
 class SkillUpStoreService {
   /**
-   * Lista todos os produtos disponíveis.
+   * Lista todos os produtos disponíveis que o usuário ainda não possui.
+   * @param {{ email: string, name?: string }} user Usuário autenticado.
    * @returns {Promise<any[]>}
    */
-  async listProducts() {
-    const products = await Product.find().lean();
+  async listProducts(user) {
+    const userSkill = await SkillUpUserService.getOrCreateUserSkillUp(user);
+    const ownedIds = (userSkill.itemsOwned || []).map(id => id.toString());
+
+    const products = await Product.find({
+      _id: { $nin: ownedIds }
+    }).lean();
+
     return products;
   }
 

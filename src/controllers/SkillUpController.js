@@ -233,7 +233,8 @@ class SkillUpController {
   }
 
   /**
-   * Lista todos os produtos disponíveis na loja do SkillUp.
+   * Lista todos os produtos disponíveis na loja do SkillUp,
+   * excluindo os que o usuário já possui.
    *
    * @param {import('express').Request} req
    * @param {import('express').Response} res
@@ -241,7 +242,7 @@ class SkillUpController {
    */
   async getProducts(req, res) {
     try {
-      const products = await SkillUpStoreService.listProducts();
+      const products = await SkillUpStoreService.listProducts(req.user);
       return res.json({ data: products });
     } catch (error) {
       console.error('Error on /skillup/products:', error);
