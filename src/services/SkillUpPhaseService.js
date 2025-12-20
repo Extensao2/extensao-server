@@ -41,7 +41,17 @@ class SkillUpPhaseService {
         }
       : null;
 
-    const questions = await Question.find({ phase: phase._id }).sort({ _id: 1 }).lean();
+    const allQuestions = await Question.find({ phase: phase._id }).sort({ _id: 1 }).lean();
+
+    // Remove perguntas duplicadas baseado no enunciado (statement)
+    const seenStatements = new Set();
+    const questions = allQuestions.filter(q => {
+      if (seenStatements.has(q.statement)) {
+        return false;
+      }
+      seenStatements.add(q.statement);
+      return true;
+    });
 
     return { phase, questions, playedPhase };
   }
